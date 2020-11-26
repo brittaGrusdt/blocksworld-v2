@@ -58,6 +58,9 @@ const NB_TRAIN_TRIALS = TrainStimuli.list_all.length;
 const TRAIN_BTTN_IDS = [BLOCK_COLS_SHORT.train.join('')].concat(
   BLOCK_COLS_SHORT.train).concat(['none']);
 
+//globally initialize with 0
+total_moves = 0 
+
 // custom functions:
 toggleNextIfDone = function (button, condition) {
   if (condition) {

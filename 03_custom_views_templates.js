@@ -26,6 +26,7 @@ const animation_view = {
       }
     });
     let id_selected;
+    total_moves = 0 // globally defined
     TRAIN_BTTN_IDS.forEach(function (id) {
       $('#' + id)
         .on('click', function (e) {

@@ -99,7 +99,7 @@ _htmlSlider = function (idxSlider, utterance, options, value) {
     `<span class='magpie-response-slider-option optionWide thick'>` + options.right + `</span>
     <output name="` + outputName + `" id=` + outputID + ` class="thick">` + value  + `</output>` +
     end;
-  return html_question + html_slider
+  return '<div class="qa-block">' + html_question + html_slider + '</div>'
 }
 
 htmlSliderAnswers = function (trial_data, values=["", "", "", ""]) {

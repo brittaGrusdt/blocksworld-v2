@@ -58,14 +58,16 @@ const multi_slider_generator = {
         <div class='stimulus'>
           <img src=${config.data[CT].picture} class ='picture'>
         </div>
-        <div id="chartdiv"></div>
+        <div class="response">
+            <div id="chartdiv"></div>
+        </div>
+        <button id='smallMarginNextButton' class='grid-button magpie-view-button'>continue with task 2</button>
       </div>
       `;
   },
 
   answer_container_gen: function (config, CT) {
-    return htmlSliderAnswers(config.data[CT]) +
-      `<button id='smallMarginNextButton' class='grid-button magpie-view-button'>continue with task 2</button>`;
+    return htmlSliderAnswers(config.data[CT]);
   },
 
   handle_response_function: function (
@@ -75,7 +77,7 @@ const multi_slider_generator = {
     answer_container_generator,
     startingTime
   ) {
-    $(".magpie-view")
+    $(".magpie-view .response")
       .append(answer_container_generator(config, CT));
     let button = $("#smallMarginNextButton");
     total_moves = 0 // globally defined

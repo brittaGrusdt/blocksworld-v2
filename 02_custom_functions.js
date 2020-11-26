@@ -99,10 +99,12 @@ drawChart = function(slider_ratings){
   }
   console.log(slider_ratings)
   chart.data = slider_ratings;
+  chart.innerRadius = am4core.percent(40);
   var pieSeries = chart.series.push(new am4charts.PieSeries());
   pieSeries.dataFields.value = "val";
   pieSeries.dataFields.category = "category";
-  chart.openPopup("Preview of your current ratings");
+  pieSeries.labels.template.disabled = true;
+  pieSeries.ticks.template.disabled = true;
 }
 
 _slidersAdjusted = function(){

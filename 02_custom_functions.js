@@ -86,23 +86,26 @@ addKeyToMoveSliders = function (button2Toggle) {
   });
 }
 
+// When the user clicks on the button, open the modal
+showChart = function() {
+  var modal = document.getElementById("chartModal");
+  modal.style.display = "block";
+}
+// When the user clicks on <span> (x), close the modal
+closeChart = function() {
+  var modal = document.getElementById("chartModal");
+  modal.style.display = "none";
+}
 drawChart = function(slider_ratings){
   var chart = am4core.create(
     "chartdiv",
     am4charts.PieChart
   );
-  console.log(slider_ratings.length)
-  if(slider_ratings.length === 0){
-    slider_ratings = [parseInt($("#response1").val()), parseInt($("#response2").val()),
-                      parseInt($("#response3").val()), parseInt($("#response4").val())];
-                      // TODO: this doesnt work yet, isnt shown in chart
-  }
-  console.log(slider_ratings)
   chart.data = slider_ratings;
   var pieSeries = chart.series.push(new am4charts.PieSeries());
   pieSeries.dataFields.value = "val";
   pieSeries.dataFields.category = "category";
-  chart.openPopup("Preview of your current ratings");
+  // chart.openPopup("Your rating");
 }
 
 _slidersAdjusted = function(){
@@ -124,6 +127,15 @@ sumResponses = function(){
          parseInt($("#response3").val()) + parseInt($("#response4").val()));
 }
 
+idx2Event = function(idx){
+  let cat = "";
+  if(idx+1 == 1) { cat = "blue and green fall"}
+  else if(idx+1 == 2) { cat = "only blue falls"}
+  else if(idx+1 == 3) { cat = "only green falls"}
+  else { cat = "nothing happens"};
+  return(cat)
+}
+
 _computeAdjustedCells = function() {
   var n_moved = nbReplied()
   let responses = [$("#response1"), $("#response2"),
@@ -133,11 +145,7 @@ _computeAdjustedCells = function() {
    console.log(rvals.join("-"))
   //  go through sliders in the order that they were moved!
   let order = _.map(responses, function(elem, idx){
-    let cat = "";
-    if(idx+1 == 1) { cat = "blue and green fall"}
-    else if(idx+1 == 2) { cat = "only blue falls"}
-    else if(idx+1 == 3) { cat = "only green falls"}
-    else { cat = "nothing happens"};
+    let cat = idx2Event(idx);
     return({i_time: parseInt(elem.attr('iReplied')),
             id: "response" + (idx+1), category: cat})
   });
@@ -185,22 +193,34 @@ _checkSliderResponse = function (id, button2Toggle) {
     .on("change", function () {
       $("#" + id).addClass('replied');
       total_moves = total_moves + 1;
-      // console.log('n moved:' + total_moves)
+      slider_ratings =
+        [parseInt($("#response1").val()), parseInt($("#response2").val()),
+         parseInt($("#response3").val()), parseInt($("#response4").val())];
+
       $("#" + id).attr('iReplied', total_moves);
       let s = sumResponses()
       // console.log('sum: ' + s)
       if(s > 100 || nbReplied() == 4) {
         let adjusted_vals = _adjustCells(button2Toggle);
         // setTimeout(_adjustCells(button2Toggle), 1000);
+        console.log(adjusted_vals)
         drawChart(adjusted_vals);
         adjusted_vals.forEach(function(obj){
           $("#output" + obj.idxSlider).val(Math.round(obj.val));
         });
         toggleNextIfDone(button2Toggle, true);
+        toggleNextIfDone($("#chartBttn"), true);
         // console.log('normed sum: ' + sumResponses())
       } else if(sumResponses()==100) {
-        drawChart([]);
+        console.log(slider_ratings)
+        let ratings = _.map(slider_ratings, function(val, idx){
+          return({val: val, id: "response" + (idx+1),
+                  idxSlider: idx+1, category: idx2Event(idx)});
+        });
+        ratings = ratings.filter(function(obj){return(obj.val !== 0)})
+        drawChart(ratings);
         toggleNextIfDone(button2Toggle, true);
+        toggleNextIfDone($("#chartBttn"), true);
       }
     });
 }

@@ -58,16 +58,24 @@ const multi_slider_generator = {
         <div class='stimulus'>
           <img src=${config.data[CT].picture} class ='picture'>
         </div>
-        <div id="chartdiv"></div>
+        <div id="chartModal" class="modal">
+          <div class="modal-content">
+            <span class="close" onclick=closeChart()>&times;</span>
+            <p>Your ratings</p>
+            <div id="chartdiv"></div>
+          </div>
+        </div>
       </div>
       `;
   },
 
   answer_container_gen: function (config, CT) {
     return htmlSliderAnswers(config.data[CT]) +
-      `<button id='smallMarginNextButton' class='grid-button magpie-view-button'>continue with task 2</button>`;
+      `<div id=parentPreviewNext class=magpie-buttons-grid>
+        <button id='smallMarginNextButton' class='grid-button magpie-view-button'>continue with task 2</button>
+        <button id='chartBttn' class='grid-button magpie-view-button' onclick=showChart()>Preview your rating</button>
+      </div>`;
   },
-
   handle_response_function: function (
     config,
     CT,

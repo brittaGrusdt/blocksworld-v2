@@ -137,7 +137,7 @@ htmlButtonAnswers = function () {
 
 htmlRunNextButtons = function () {
   let htmlBttns =
-    `<div id=parentRunNext class=magpie-buttons-grid>
+    `<div id=parentRunNext class="magpie-buttons-grid">
       <run>
         <button id='runButton' class='grid-button magpie-view-button'>RUN</button>
       </run>

@@ -26,7 +26,6 @@ const animation_view = {
       }
     });
     let id_selected;
-    total_moves = 0 // globally defined
     TRAIN_BTTN_IDS.forEach(function (id) {
       $('#' + id)
         .on('click', function (e) {
@@ -56,21 +55,20 @@ const multi_slider_generator = {
   stimulus_container_gen: function (config, CT) {
     return `<div class='magpie-view'>
         <h2 id='qud' class='stimulus'>${config.data[CT].QUD}</h2>
-        <div class='stimulus'>
-          <img src=${config.data[CT].picture} class ='picture'>
-        </div>
-        <div class="response">
+        <div class='stimulus_grid'>
+          <img src=${config.data[CT].picture} class="stim_pic">
+          <div class="stim_chart">
             <div id="chartdiv"></div>
+          </div>
         </div>
-        <button id='smallMarginNextButton' class='grid-button magpie-view-button'>continue with task 2</button>
       </div>
       `;
   },
 
   answer_container_gen: function (config, CT) {
-    return htmlSliderAnswers(config.data[CT]);
+    return htmlSliderAnswers(config.data[CT]) +
+    `<button id='smallMarginNextButton' class='grid-button magpie-view-button'>continue with task 2</button>`;
   },
-
   handle_response_function: function (
     config,
     CT,
@@ -78,7 +76,7 @@ const multi_slider_generator = {
     answer_container_generator,
     startingTime
   ) {
-    $(".magpie-view .response")
+    $(".magpie-view")
       .append(answer_container_generator(config, CT));
     let button = $("#smallMarginNextButton");
     total_moves = 0 // globally defined
@@ -486,7 +484,12 @@ const animation_view_sliders = {
   // The render function gets the magpie object as well as the current trial
   // in view counter as input
   render: function (CT, magpie) {
-    let html_answers = htmlSliderAnswers(TRAIN_TRIALS[CT])
+    let html_answers = `
+    <div class="stimulus_grid">` + htmlSliderAnswers(TRAIN_TRIALS[CT]) +
+      `<div class="stim_chart">
+        <div id="chartdiv"></div>
+       </div>
+    </div>` + htmlRunNextButtons();
     let animation = showAnimationInTrial(CT, html_answers, progress_bar=true);
     let cleared = false;
     Events.on(animation.engine, 'afterUpdate', function (event) {

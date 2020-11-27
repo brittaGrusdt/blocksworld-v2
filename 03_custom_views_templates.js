@@ -57,7 +57,7 @@ const multi_slider_generator = {
         <h2 id='qud' class='stimulus'>${config.data[CT].QUD}</h2>
         <div class='stimulus_grid'>
           <img src=${config.data[CT].picture} class="stim_pic">
-          <div class="stim_chart">
+          <div class="response">
             <div id="chartdiv"></div>
           </div>
         </div>
@@ -360,14 +360,10 @@ handle_response_function: function(config, CT, magpie, answer_container_generato
       config.data[CT].question_right_part === undefined ? "" : config.data[CT].question_right_part;
 
   $(".magpie-view").append(answer_container_generator(config, CT));
-
   response = $("#response");
-
   response.on("change", function() {
       $("#next").removeClass("magpie-nodisplay");
   });
-
-
   $("#next").on("click", function() {
       const RT = Date.now() - startingTime; // measure RT before anything else
       CountTrials.color_vision = CountTrials.color_vision + 1;
@@ -381,19 +377,10 @@ handle_response_function: function(config, CT, magpie, answer_container_generato
       };
 
       trial_data = magpieUtils.view.save_config_trial_data(config.data[CT], trial_data);
-
       magpie.trial_data.push(trial_data);
       magpie.findNextView();
   });
 }};
-
-
-
-
-
-
-
-
 
 // const custom_posttest_generator = {
 //   answer_container_gen: function (config, CT) {

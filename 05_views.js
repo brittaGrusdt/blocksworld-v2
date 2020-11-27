@@ -178,7 +178,9 @@ const instructions_train_slider_ratings = magpieViews.view_generator("instructio
   <b>automatically be adjusted to sum up to 1</b> &mdash; while the proportions how likely
   you rated the events <b>relative to each other</b> are retained.
   <br/>
-  <b>2</b>. The <b>sum of your ratings must not be smaller than 1</b>
+  <b>2</b>. In each trial you can <b>reset</b> your rating by <b>setting one slider to 0</b> which will <b>set all four sliders to 0</b>.
+  <br/>
+  <b>3</b>. The <b>sum of your ratings must not be smaller than 1</b>
   &mdash; otherwise you won't be able to proceed to the next trial.
   As soon as they sum up to 1, you will see two <b>piecharts</b> next to the
   sliders that visualize <b>the probability that you assign for the blue, respectively

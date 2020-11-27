@@ -163,39 +163,38 @@ _computeAdjustedCells = function() {
                    $("#response3"), $("#response4")];
 
    let rvals = _.map(responses, function(r){return(r.val())});
-   console.log(rvals.join("-"))
-  //  go through sliders in the order that they were moved!
-  let order = _.map(responses, function(elem, idx){
-    let cat = idx2Event(idx);
-    return({i_time: parseInt(elem.attr('iReplied')),
-            id: "response" + (idx+1), category: cat})
-  });
-  order = order.filter(function(obj){return(obj.i_time !== undefined)});
-  order = _.sortBy(order, 'i_time')
-  // console.log(order);
-  let ratios = _.map(_.range(1, n_moved), function(i, idx){
-    let id_current = order[idx]["id"]
-    let id_next = order[idx+1]["id"]
-    var next_val = parseInt($("#" + id_next).val())
-    var this_val = parseInt($("#" + id_current).val())
-    return(next_val/this_val)
-  });
-  let prods = _.map(ratios, function(val, idx){
-    return(ratios.slice(0, idx+1).reduce(function(i, acc){return(i*acc)}, 1))
-  });
-  let total = prods.reduce(function(val, acc){return(acc+val)}, 0);
-  // *100 as we output nbs from 0 to 100 not decimals
-  let cell1_adj = 100 * (1/(1+total))
-  let id1 = order[0].id
-  let obj1 = {val: cell1_adj, id: id1, idxSlider: _.last(id1), category: order[0].category}
-  let adjusted = [obj1].concat(
-    _.map(prods, function(fct, idx){
-    let id = order[idx+1]["id"]
-    let new_val = {val: fct * cell1_adj, id: order[idx+1]["id"],
-                   idxSlider: _.last(id), category: order[idx+1]["category"]}
-    return(new_val)
-  }));
-  adjusted = _.sortBy(adjusted, 'idxSlider')
+   // console.log(rvals.join("-"))
+   //  go through sliders in the order that they were moved!
+   let order = _.map(responses, function(elem, idx){
+     let cat = idx2Event(idx);
+     return({i_time: parseInt(elem.attr('iReplied')),
+             id: "response" + (idx+1), category: cat})
+   });
+   order = order.filter(function(obj){return(obj.i_time !== undefined && obj.i_time !== 0)});
+   order = _.sortBy(order, 'i_time')
+   let ratios = _.map(_.range(1, n_moved), function(i, idx){
+     let id_current = order[idx]["id"]
+     let id_next = order[idx+1]["id"]
+     var next_val = parseInt($("#" + id_next).val())
+     var this_val = parseInt($("#" + id_current).val())
+     return(next_val/this_val)
+   });
+   let prods = _.map(ratios, function(val, idx){
+     return(ratios.slice(0, idx+1).reduce(function(i, acc){return(i*acc)}, 1))
+   });
+   let total = prods.reduce(function(val, acc){return(acc+val)}, 0);
+   // *100 as we output nbs from 0 to 100 not decimals
+   let cell1_adj = 100 * (1/(1+total))
+   let id1 = order[0].id
+   let obj1 = {val: cell1_adj, id: id1, idxSlider: _.last(id1), category: order[0].category}
+   let adjusted = [obj1].concat(
+     _.map(prods, function(fct, idx){
+       let id = order[idx+1]["id"]
+       let new_val = {val: fct * cell1_adj, id: order[idx+1]["id"],
+       idxSlider: _.last(id), category: order[idx+1]["category"]}
+       return(new_val)
+     }));
+   adjusted = _.sortBy(adjusted, 'idxSlider')
   return(adjusted)
 }
 
@@ -219,11 +218,28 @@ _checkSliderResponse = function (id, button2Toggle, test) {
       slider_ratings =
         [parseInt($("#response1").val()), parseInt($("#response2").val()),
          parseInt($("#response3").val()), parseInt($("#response4").val())];
-
+      // make sure that not divided by 0 when all sliders are moved to 0!
+      let reset = false;
+      if(parseInt($("#"+id).val()) === 0){
+        button2Toggle.addClass("grid-button");
+        _.map(_.range(1,5), function(i){
+          $("#response" + i).val(0);
+          $("#output" + i).val(0);
+          if($("#response" + i).attr('iReplied') !== undefined){
+            $("#response" + i).attr('iReplied', 0);
+          }
+          if($("#response" + i).hasClass('replied')){
+            $("#response" + i).removeClass('replied');
+          }
+          total_moves = 0;
+        });
+        reset = true;
+        drawChart([{val: 0, category: col1 + " falls"}], col1)
+        drawChart([{val: 0, category: col2 + " falls"}], col2)
+      }
       $("#" + id).attr('iReplied', total_moves);
       let s = sumResponses()
-      // console.log('sum: ' + s)
-      if(s > 100 || nbReplied() == 4) {
+      if((s > 100) || (nbReplied() == 4 && !reset)) {
         let adjusted_vals = _adjustCells(button2Toggle);
         // setTimeout(_adjustCells(button2Toggle), 1000);
         drawChart(adjusted_vals, col1);
@@ -234,7 +250,7 @@ _checkSliderResponse = function (id, button2Toggle, test) {
         toggleNextIfDone(button2Toggle, true);
         toggleNextIfDone($("#chartBttn"), true);
         // console.log('normed sum: ' + sumResponses())
-      } else if(sumResponses()==100) {
+      } else if(s == 100) {
         let ratings = _.map(slider_ratings, function(val, idx){
           return({val: val, id: "response" + (idx+1),
                   idxSlider: idx+1, category: idx2Event(idx)});

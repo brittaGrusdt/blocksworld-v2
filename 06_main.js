@@ -19,18 +19,17 @@ $("document")
     // in all other modes null will be returned
     window.magpie_monitor = magpieInit({
       // You have to specify all views you want to use in this experiment and the order of them
+      //*alternating trials of Exp1 (prior elicitation) and Exp2 (production)* in views_test!//
       views_seq: [
       intro,
       instructions_general,
-      // // * Training with sliders* //
+      // * Training with sliders* //
       instructions_train_sliders_choices,
       slider_choice_training,
       instructions_train_slider_ratings,
       animation_view_sliders,
-      // // Testing //
-      // //*alternating trials of Exp1 (prior elicitation) and Exp2 (production)*//
+      // Testing //
       instructions_fridge,
-      // multiple_slider_train,
       fridge_train,
       instructions_fridge_reminder
     ].concat(views_test).concat([post_test, thanks]),

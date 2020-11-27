@@ -71,14 +71,7 @@ const instructions_general = magpieViews.view_generator("instructions", {
          <br />
          <br />
          The experiment consists of two phases, a <b>training</b> and a <b>testing</b> phase.
-         In total, you will need about <b>20 minutes</b> to finish it.
-         <br/>
-         <br/>
-         We will now start the training phase which consists of <b>15</b>
-         trials. You will see block arrangements similar to those you will be
-         shown later in the test phase, such that you are able to <b>develop
-         intuitions</b> about the <b>physical properties</b> and get familiar
-         with the stimuli.
+         In total, you will need about <b>20-25 minutes</b> to finish it.
          <br/>
          <br/>
          <b>Please note</b>:
@@ -129,18 +122,15 @@ const instructions_train = magpieViews.view_generator("instructions", {
   buttonText: "CONTINUE"
 });
 
-const instructions_train_sliders = magpieViews.view_generator("instructions", {
+const instructions_train_sliders_choices = magpieViews.view_generator("instructions", {
   trials: 1,
-  name: "instructions_train_sliders",
-  title: "Instructions Training",
-  text: `For each presented scene we would like to know <b>how likely</b> you
-  think it is for certain <b>blocks to fall</b> (<b>off a platform or off another
-  block &mdash; not necessarily to the ground</b>).
-  The blocks represent common toy blocks <b>without</b> any special properties
-  and the different colors do <b>not have</b> any meaning.
+  name: "instructions_train_sliders_choices",
+  title: "Instructions Training 1",
+  text: `In the main experiment, you will see different block arrangements.
+  For each presented arrangement we will ask you to move sliders to indicate
+  <b>how likely</b> you think it is for certain <b>blocks to fall</b>.
   <br/>
   <br/>
-  Your task will be to <b>adjust a slider</b> for <b>each of four events</b> (left: <i>impossible event</i>, right: <i>certain event</i>).
   Each event is represented by a different icon:
   <br />
   A falling block is represented by a skewed rectangle and a block that
@@ -155,25 +145,48 @@ const instructions_train_sliders = magpieViews.view_generator("instructions", {
   <img src='stimuli/img/icons/not-yellow.png' />
   <br/>
   <br/>
-  After you have given your estimates by moving the sliders, click on <b>RUN</b> to
-  start the animation and see what happens.
+  Before we start with the actual training trials, there will be <b>10</b> trials
+  which aim to <b>familiarize you with how to use the sliders</b> to indicate your beliefs.
+  `,
+  buttonText: "continue with slider examples"
+});
+
+const instructions_train_slider_ratings = magpieViews.view_generator("instructions", {
+  trials: 1,
+  name: "instructions_train_sliders",
+  title: "Training 2",
+  text: `Great &mdash; we will now proceed with the second part of the training phase
+  where you should familiarize yourself with the stimuli.
+  <br/>
+  You will see different block arrangements. For each presented arrangement we
+  would like to know <b>how likely</b> you think it is for certain
+  <b>blocks to fall</b> (<b>off a platform or off another block &mdash;
+    not necessarily to the ground</b>).
+    <br/>
+  The blocks represent common toy blocks <b>without</b> any special properties
+  and the different colors do <b>not have</b> any meaning.
+  Your task is to indicate how likely you think a certain event happens by
+  <b>adjusting the corresponding sliders</b> (left: <i>impossible event</i>,
+    right: <i>certain event</i>).
+  <br/>
+  <br/>
+  After you have moved the sliders, click on <b>RUN</b> to start the animation and see what happens.
   <br/>
   <b>Please note</b>:
   <br/>
   <b>1</b>. When the sum of your slider ratings is greater than one, they will
-  <b>automatically be adjusted to sum up to 1</b> - while the proportions how likely
-  you rated the events relative to each other are retained.
+  <b>automatically be adjusted to sum up to 1</b> &mdash; while the proportions how likely
+  you rated the events <b>relative to each other</b> are retained.
   <br/>
   <b>2</b>. The <b>sum of your ratings must not be smaller than 1</b>
   &mdash; otherwise you won't be able to proceed to the next trial.
   As soon as they sum up to 1, you will see two <b>piecharts</b> next to the
-  sliders that visualize the probability you assign for the blue, respectively
-  the green block, to fall.
+  sliders that visualize <b>the probability that you assign for the blue, respectively
+  the green block</b>, to fall.
   <br/>
   <br/>
-  `,
-  buttonText: "continue"
-});
+  `
+})
 
 const instructions_train_sliders_procedure = magpieViews.view_generator("instructions", {
   trials: 1,
@@ -372,8 +385,8 @@ const instructions_fridge_reminder = magpieViews.view_generator("instructions", 
   <b>common toy blocks</b>, they all have <b>the same properties</b> and they
   <b>behave as in the training trials</b>.
   <br/>
-  <b>4</b>. In task 2, please describe the scene as adequatley as possible with
-  the given words.
+  <b>4</b>. In task 2, please describe the scene <b>as adequately as possible</b>
+  with the given words.
   <br/>
   <br/>
   <b>A final note</b>:

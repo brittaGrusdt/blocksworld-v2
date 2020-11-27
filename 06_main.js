@@ -23,14 +23,14 @@ $("document")
       intro,
       instructions_general,
       // // * Training with sliders* //
-      instructions_train_sliders,
+      instructions_train_sliders_choices,
+      slider_choice_training,
+      instructions_train_slider_ratings,
       animation_view_sliders,
       // // Testing //
       // //*alternating trials of Exp1 (prior elicitation) and Exp2 (production)*//
-      // instructions_test,
       instructions_fridge,
       // multiple_slider_train,
-      // instructions_fridge_procedure,
       fridge_train,
       instructions_fridge_reminder
     ].concat(views_test).concat([post_test, thanks]),

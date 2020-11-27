@@ -99,19 +99,37 @@ closeChart = function() {
   var modal = document.getElementById("chartModal");
   modal.style.display = "none";
 }
-drawChart = function(slider_ratings){
+drawChart = function(slider_ratings, color){
+  console.log(slider_ratings)
   var chart = am4core.create(
-    "chartdiv",
+    "chartdiv_" + color,
     am4charts.PieChart
   );
-  chart.data = slider_ratings;
   chart.innerRadius = am4core.percent(40);
   var pieSeries = chart.series.push(new am4charts.PieSeries());
+  let p = 0;
+  let col = "";
+  _.map(slider_ratings, function(obj){
+      if(color=="blue" && (obj.id=="response1" || obj.id=="response2")) {
+        p = p + obj.val
+        col = "#0496FF"
+      }
+      if(color=="green" && (obj.id=="response1" || obj.id=="response3")){
+        p = p + obj.val
+        col = "#28B463"
+      }
+  });
+  chart.data = [{val: p, category: color + " falls"},
+                {val: 100-p, category: color + " does not fall"}];
+  var colorSet = new am4core.ColorSet();
+  colorSet.list = [col, "#E3DFDC"].map(function(color) {
+    return new am4core.color(color);
+  });
+  pieSeries.colors = colorSet;
   pieSeries.dataFields.value = "val";
   pieSeries.dataFields.category = "category";
   pieSeries.labels.template.disabled = true;
   pieSeries.ticks.template.disabled = true;
-  // chart.openPopup("Your rating");
 }
 
 _slidersAdjusted = function(){
@@ -210,7 +228,8 @@ _checkSliderResponse = function (id, button2Toggle) {
         let adjusted_vals = _adjustCells(button2Toggle);
         // setTimeout(_adjustCells(button2Toggle), 1000);
         console.log(adjusted_vals)
-        drawChart(adjusted_vals);
+        drawChart(adjusted_vals, "blue");
+        drawChart(adjusted_vals, "green");
         adjusted_vals.forEach(function(obj){
           $("#output" + obj.idxSlider).val(Math.round(obj.val));
         });
@@ -224,7 +243,8 @@ _checkSliderResponse = function (id, button2Toggle) {
                   idxSlider: idx+1, category: idx2Event(idx)});
         });
         ratings = ratings.filter(function(obj){return(obj.val !== 0)})
-        drawChart(ratings);
+        drawChart(ratings, "blue");
+        drawChart(ratings, "green");
         toggleNextIfDone(button2Toggle, true);
         toggleNextIfDone($("#chartBttn"), true);
       }

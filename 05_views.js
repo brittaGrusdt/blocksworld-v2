@@ -166,8 +166,9 @@ const instructions_train_sliders = magpieViews.view_generator("instructions", {
   <br/>
   <b>2</b>. The <b>sum of your ratings must not be smaller than 1</b>
   &mdash; otherwise you won't be able to proceed to the next trial.
-  As soon as they sum up to 1, you will you will see a <b>piechart</b> next to the
-  sliders that further visualizes your (potentially adjusted) ratings.
+  As soon as they sum up to 1, you will see two <b>piecharts</b> next to the
+  sliders that visualize the probability you assign for the blue, respectively
+  the green block, to fall.
   <br/>
   <br/>
   `,

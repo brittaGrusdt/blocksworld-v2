@@ -58,7 +58,8 @@ const multi_slider_generator = {
         <div class='stimulus_grid'>
           <img src=${config.data[CT].picture} class="stim_pic">
           <div class="response">
-            <div id="chartdiv"></div>
+            <div id="chartdiv_blue"></div>
+            <div id="chartdiv_green"></div>
           </div>
         </div>
       </div>

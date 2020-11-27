@@ -408,8 +408,33 @@ const slider_choice_training = magpieViews.view_generator('sentence_choice', {
   trials: slider_choice_trials.length,
   name: "slider_choice_training",
   data: _.shuffle(slider_choice_trials)
-}
-);
+}, {
+  handle_response_function: function(config, CT, magpie, answer_container_generator, startingTime) {
+    $(".magpie-view").append(answer_container_generator(config, CT));
+    // attaches an event listener to the yes / no radio inputs
+    // when an input is selected a response property with a value equal
+    // to the answer is added to the trial object
+    // as well as a readingTimes property with value
+    $("input[name=answer]").on("change", function() {
+    const RT = Date.now() - startingTime;
+    let response = $("input[name=answer]:checked").val();
+    let trial_data = {
+        trial_name: config.name,
+        trial_number: CT + 1,
+        response: response,
+        RT: RT
+    };
+    trial_data = magpieUtils.view.save_config_trial_data(config.data[CT], trial_data);
+    magpie.trial_data.push(trial_data);
+    if (response === config.data[CT].expected) {
+        alert("Your answer is correct! Yey! :)");
+    } else {
+      alert("Sorry you answer was wrong. :(")
+    }
+    magpie.findNextView();
+  });
+  }
+});
 
 const sentence_choice_custom = magpieViews.view_generator("sentence_choice", {
   trials: color_vision_test.length,

@@ -311,44 +311,87 @@ fridge_trials = _.map(fridge_trials, function (trial, i) {
   return trial
 });
 
-
 let fridge_ex = Object.assign({}, fridge_trials[0])
 fridge_ex.picture = "stimuli/img/train_slider_fridge/ind2_test_colors.jpg";
 fridge_ex.id = id_slider
 const TRAIN_FRIDGE_TRIALS = [fridge_ex];
 
+let slider_choice_ids1 = ["all-equal", "both-or-none"]
+let other_ids = [
+  ["both-or-none-probably-both", "both-or-none-rather-none"],
+  ["probably-red-but-not-yellow", "probably-yellow-but-not-red"],
+  ["red-maybe-yellow", "yellow-maybe-red"],
+  ["red-probably-not-yellow", "yellow-probably-not-red"],
+  ["red-probably-yellow", "yellow-probably-red"]
+];
 
+let part1 = `The sliders represent the beliefs of a participant who <br/><b>` ;
+let questions1 = [
+  part1 + `is <b>completely uncertain</b> whether the blocks fall.`,
+  part1 + `thinks that either both blocks or neither of the two blocks fall.`
+]
+let other_questions = [
+  [part1 + `thinks that either both or neither of the two blocks fall <br/>and both is rated as more likely.`,
+  part1 + `thinks that either both or neither of the two blocks fall <br/>and neither is rated as more likely.`
+  ],
+  [part1 + `is pretty certain that the red block falls but not the yellow.`,
+   part1 + `is pretty certain that the yellow block falls but not the red.`
+  ],
+  [part1 + `thinks that red falls but is uncertain whether or not yellow falls.`,
+   part1 + `thinks that yellow falls but is uncertain whether or not red falls.`
+  ],
+  [part1 + `thinks that red falls but probably not yellow.`,
+   part1 + `thinks that yellow falls but probably not red.`
+  ],
+  [part1 + `thinks that red falls and is rather confident that yellow falls as well.`,
+  part1 + `thinks that yellow falls and is rather confident that red falls as well.`]
+];
 
+let indices = _.map(_.range(0, 5), function(i){
+  return(Math.round(Math.random()))
+})
+let qs = questions1.concat(_.map(indices, function(i, idx) {
+  return(other_questions[idx][i] + "</b>")
+}));
+let slider_choice_ids = slider_choice_ids1.concat(_.map(indices, function(i, idx) {
+  return(other_ids[idx][i])
+}));
 
+let slider_choice_trials = _.map(_.range(slider_choice_ids.length), function (i) {
+  let trial = {
+    QUD: "Please click on the button with the correct answer.",
+    question: qs[i],
+    picture: "stimuli/img/slider-choices/" + slider_choice_ids[i] + ".png",
+    option1: "yes",
+    option2: "no",
+    expected: "yes",
+    id: 'slider_choice_yes' + i
+  }
+  return trial
+});
 
-// PRE-TEST for steepness / edge
-// let pretest_trial = function(angle, dir){
-//   return {QUD: "Please answer the question below by moving the slider.",
-//           picture: "stimuli/img/pretest/ramp-side/" + dir + "-" + angle.toString() + "-group.jpg",
-//           question: 'Do you think the <b>group</b> block will fall?',
-//           optionLeft: "will not happen",
-//           optionRight: "will happen",
-//           id: '', question1: '', question2: '', question3: '', question4: '',
-//           icon1: '', icon2: '', icon3: '', icon4: '',
-//           response1: '', response2: '', response3: '', response4: '',
-//           expected: '', group: '',	picture1: '',	picture2: '',
-//           noticed_steepness: '',	noticed_ball: ''
-//         };
-// }
-// var pretest_trials = [];
-// PRETEST_ANGLES.forEach(function (angle) {
-//   pretest_trials.push(pretest_trial(angle, "horiz"))
-//   pretest_trials.push(pretest_trial(angle, "vert"))
-// })
-//
-// let sides = ["left", "right"];
-// pretest_trials = _.shuffle(pretest_trials);
-// _.map(pretest_trials, function (trial, i) {
-//   let color = _.sample(BLOCK_COLS.test);
-//   trial.picture = trial.picture.replace("group", color);
-//   let side = i % 2 === 0 ? sides[0] : sides[1];
-//   trial.picture = trial.picture.replace("side", side);
-//   trial.question = trial.question.replace("group", color);
-//   let id = trial.picture.split("/")
-//   trial.id = id[id.length - 1].slice(0, -4);
-// });
+// add trials with wrong statements
+let qs_no = [];
+let ids_no = [];
+for(idx in [0, 3, 4]){
+  let i = indices[idx]
+  let i_wrong = i==0 ? 1 : 0
+  let id = other_ids[idx][i_wrong]
+  id = idx==0 ? id + "-not0" : id;
+  ids_no.push(id) // other picture
+  qs_no.push(other_questions[idx][i] + "</b>") // but same question
+}
+
+slider_choice_trials = _.shuffle(slider_choice_trials.concat(
+  _.map(_.range(0, ids_no.length), function(i){
+    return {
+      QUD: "Please click on the button with the correct answer.",
+      question: qs_no[i],
+      picture: "stimuli/img/slider-choices/" + ids_no[i] + ".png",
+      option1: "yes",
+      option2: "no",
+      expected: "no",
+      id: 'slider_choice_no' + i
+    }
+  })
+));

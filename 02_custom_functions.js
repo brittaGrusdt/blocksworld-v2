@@ -100,7 +100,6 @@ closeChart = function() {
   modal.style.display = "none";
 }
 drawChart = function(slider_ratings, color){
-  console.log(slider_ratings)
   var chart = am4core.create(
     "chartdiv_" + color,
     am4charts.PieChart
@@ -108,15 +107,13 @@ drawChart = function(slider_ratings, color){
   chart.innerRadius = am4core.percent(40);
   var pieSeries = chart.series.push(new am4charts.PieSeries());
   let p = 0;
-  let col = "";
+  let col = color=="blue" ? cols["royal"] : cols[color];
   _.map(slider_ratings, function(obj){
-      if(color=="blue" && (obj.id=="response1" || obj.id=="response2")) {
+      if((color=="blue" || color=="red") && (obj.id=="response1" || obj.id=="response2")){
         p = p + obj.val
-        col = "#0496FF"
       }
-      if(color=="green" && (obj.id=="response1" || obj.id=="response3")){
+      if((color=="green" || color=="yellow") && (obj.id=="response1" || obj.id=="response3")){
         p = p + obj.val
-        col = "#28B463"
       }
   });
   chart.data = [{val: p, category: color + " falls"},
@@ -212,7 +209,9 @@ _adjustCells = function(button2Toggle){
   return(normed_vals)
 }
 
-_checkSliderResponse = function (id, button2Toggle) {
+_checkSliderResponse = function (id, button2Toggle, test) {
+  let col1 = test ? "blue" : "red";
+  let col2 = test ? "green" : "yellow";
   $("#" + id)
     .on("change", function () {
       $("#" + id).addClass('replied');
@@ -227,9 +226,8 @@ _checkSliderResponse = function (id, button2Toggle) {
       if(s > 100 || nbReplied() == 4) {
         let adjusted_vals = _adjustCells(button2Toggle);
         // setTimeout(_adjustCells(button2Toggle), 1000);
-        console.log(adjusted_vals)
-        drawChart(adjusted_vals, "blue");
-        drawChart(adjusted_vals, "green");
+        drawChart(adjusted_vals, col1);
+        drawChart(adjusted_vals, col2);
         adjusted_vals.forEach(function(obj){
           $("#output" + obj.idxSlider).val(Math.round(obj.val));
         });
@@ -237,24 +235,23 @@ _checkSliderResponse = function (id, button2Toggle) {
         toggleNextIfDone($("#chartBttn"), true);
         // console.log('normed sum: ' + sumResponses())
       } else if(sumResponses()==100) {
-        console.log(slider_ratings)
         let ratings = _.map(slider_ratings, function(val, idx){
           return({val: val, id: "response" + (idx+1),
                   idxSlider: idx+1, category: idx2Event(idx)});
         });
-        ratings = ratings.filter(function(obj){return(obj.val !== 0)})
-        drawChart(ratings, "blue");
-        drawChart(ratings, "green");
+        // ratings = ratings.filter(function(obj){return(obj.val !== 0)})
+        drawChart(ratings, col1);
+        drawChart(ratings, col2);
         toggleNextIfDone(button2Toggle, true);
         toggleNextIfDone($("#chartBttn"), true);
       }
     });
 }
 
-addCheckSliderResponse = function (button2Toggle) {
+addCheckSliderResponse = function (button2Toggle, test) {
   _.range(1, 5)
     .forEach(function (i) {
-      _checkSliderResponse("response" + i, button2Toggle);
+      _checkSliderResponse("response" + i, button2Toggle, test);
     });
 }
 

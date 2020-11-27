@@ -86,7 +86,7 @@ const multi_slider_generator = {
       addKeyToMoveSliders(button);
       console.log(config.data[CT].id)
     }
-    addCheckSliderResponse(button);
+    addCheckSliderResponse(button, true);
     button.on("click", function () {
       const RT = Date.now() - startingTime; // measure RT before anything else
       let responseData = getSliderResponse();
@@ -474,8 +474,9 @@ const animation_view_sliders = {
   render: function (CT, magpie) {
     let html_answers = `
     <div class="stimulus_grid">` + htmlSliderAnswers(TRAIN_TRIALS[CT]) +
-      `<div class="stim_chart">
-        <div id="chartdiv"></div>
+      `<div class="response">
+        <div id="chartdiv_red"></div>
+        <div id="chartdiv_yellow"></div>
        </div>
     </div>` + htmlRunNextButtons();
     let animation = showAnimationInTrial(CT, html_answers, progress_bar=true);
@@ -486,7 +487,7 @@ const animation_view_sliders = {
         cleared = true;
       }
     });
-    addCheckSliderResponse($('#runButton'));
+    addCheckSliderResponse($('#runButton'), false);
     DEBUG ? addKeyToMoveSliders($("#runButton")) : null;
 
     let anim = {animation, cleared, CT, started:false,  trial_name:'animation_slider'}

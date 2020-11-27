@@ -305,7 +305,7 @@ fridge_trials = _.map(fridge_trials, function (trial, i) {
    'optionLeft', 'optionRight', 'expected'].forEach(function(key){
     trial[key] = '';
   });
-  trial.QUD = "Task 2: Please build the best sentence such that another person's<br/> slider ratings match yours as much as possible.",
+  trial.QUD = "Task 2: Please describe what happens in the picture as adequately as possible.",
   trial.sentence = "";
   trial = _.omit(trial, ['icon1', 'icon2', 'icon3', 'icon4']);
   return trial

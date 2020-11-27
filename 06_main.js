@@ -20,18 +20,17 @@ $("document")
     window.magpie_monitor = magpieInit({
       // You have to specify all views you want to use in this experiment and the order of them
       views_seq: [
-      // intro,
-      // instructions_general,
+      intro,
+      instructions_general,
       // // * Training with sliders* //
-      // instructions_train_sliders,
-      // instructions_train_sliders_procedure,
-      // animation_view_sliders,
+      instructions_train_sliders,
+      animation_view_sliders,
       // // Testing //
       // //*alternating trials of Exp1 (prior elicitation) and Exp2 (production)*//
       // instructions_test,
-      // instructions_fridge,
-      multiple_slider_train,
-      instructions_fridge_procedure,
+      instructions_fridge,
+      // multiple_slider_train,
+      // instructions_fridge_procedure,
       fridge_train,
       instructions_fridge_reminder
     ].concat(views_test).concat([post_test, thanks]),

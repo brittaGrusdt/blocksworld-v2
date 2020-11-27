@@ -114,7 +114,7 @@ const instructions_train = magpieViews.view_generator("instructions", {
   <b>Please note</b>:
   <br/>
   A block is considered to <b>fall</b> as soon as it <b>drops off a platform</b> or
-  <b>off another block</b> - that is, a block does not
+  <b>off another block</b> &mdash; that is, a block does not
   necessarily need to fall to the ground in order to count as falling.
   <br/>
   The colored blocks represent common toy blocks <b>without</b> any special
@@ -134,30 +134,43 @@ const instructions_train_sliders = magpieViews.view_generator("instructions", {
   name: "instructions_train_sliders",
   title: "Instructions Training",
   text: `For each presented scene we would like to know <b>how likely</b> you
-  think it is for certain blocks to fall or not to fall.
+  think it is for certain <b>blocks to fall</b> (<b>off a platform or off another
+  block &mdash; not necessarily to the ground</b>).
+  The blocks represent common toy blocks <b>without</b> any special properties
+  and the different colors do <b>not have</b> any meaning.
   <br/>
-  For this purpose, your task will be to <b>adjust a slider</b> for <b>each of four events</b> (left: <i>impossible event</i>, right: <i>certain event</i>).
-  Each event is represented by a different icon.
+  <br/>
+  Your task will be to <b>adjust a slider</b> for <b>each of four events</b> (left: <i>impossible event</i>, right: <i>certain event</i>).
+  Each event is represented by a different icon:
   <br />
   A falling block is represented by a skewed rectangle and a block that
   does not fall is represented by a rectangle with a line below, e.g.
   the following icon represents the event
   <br/>
   '<i>The <b>green</b> block <b>falls</b>, but the <b>yellow</b> block
-  <b>does not fall</b></i>':
+  <b>does not fall</b></i>'.
   <br/>
   <br/>
   <img src='stimuli/img/icons/green.png'/>
   <img src='stimuli/img/icons/not-yellow.png' />
   <br/>
+  <br/>
+  After you have given your estimates by moving the sliders, click on <b>RUN</b> to
+  start the animation and see what happens.
+  <br/>
   <b>Please note</b>:
   <br/>
-  A block is considered to <b>fall</b> as soon as it <b>drops off a platform</b> or
-  <b>off another block</b> - that is, a block does <b>not
-  necessarily</b> need to fall to the ground in order to count as falling.
+  <b>1</b>. When the sum of your slider ratings is greater than one, they will
+  <b>automatically be adjusted to sum up to 1</b> - while the proportions how likely
+  you rated the events relative to each other are retained.
   <br/>
-  The blocks represent common toy blocks <b>without</b> any special properties
-  and the different colors do <b>not have</b> any meaning.`,
+  <b>2</b>. The <b>sum of your ratings must not be smaller than 1</b>
+  &mdash; otherwise you won't be able to proceed to the next trial.
+  As soon as they sum up to 1, you will you will see a <b>piechart</b> next to the
+  sliders that further visualizes your (potentially adjusted) ratings.
+  <br/>
+  <br/>
+  `,
   buttonText: "continue"
 });
 
@@ -228,25 +241,21 @@ const instructions_train3 = magpieViews.view_generator("instructions", {
 const instructions_fridge = magpieViews.view_generator("instructions", {
   trials: 1,
   name: "instructions_fridge",
-  title: "Instructions Task 2 Test Phase",
-  text: `In trials of task 2 we will ask you to <b>describe the scene</b>
-  shown in the picture.More concretely, your task is to <b>produce the
-  sentence</b> that <b>best describes</b> which blocks you think will fall.
-  <br />
-  <br />
-  For this, imagine <b>another person</b> who has to <b>adjust the four sliders</b>
-  of the first task, such that they <b>match your ratings of task 1
-  as closely as possible</b>.
-  <br />
-  The <b>only hint</b> that the other person gets for adjusting the sliders
-  is <b>the sentence that you produce</b> to describe the scene
-  (the other person does not see the picture that you see).
+  title: "Instructions Test Phase",
+  text: `Great &mdash; we will now proceed with the test phase. Each trial now
+  consists of two tasks. Task 1 is the same as in the training phase (but
+  without feedback). In task 2 we ask you to <b>produce the
+  sentence</b> that <b>best describes</b> which blocks you think will fall
+  in the shown picture of block arrangements.
   <br/>
+  You can select words by clicking on them &mdash; the resulting sentence will be
+  shown in the box in the lower left corner.
+  The sentences that you can produce are <b>limited</b>. You will see that the
+  set of words you can select next depends on the
+  previously chosen word (some words will be greyed out).
   <br/>
-  The sentences that you can produce are <b>limited</b>: you will see a <b>set of
-  words</b> which we ask you to <b>concatenate by clicking</b> on them.
-  You will be able to produce the following types of sentences:
-  <br />
+  The following types of sentences will be producable:
+  <br/>
   <b>1.</b> <b>simple assertions</b>, e.g. <i>The green block
   falls</i>, <i>The blue block does not fall</i>, ...
   <br/>
@@ -260,10 +269,15 @@ const instructions_fridge = magpieViews.view_generator("instructions", {
   falls as well</i>, <i>If the green block does not fall, the blue block falls</i>, ...
   <br />
   <br />
-  Please note: <b>might/might not</b> can only be used in combination with a single block,
-  i.e.~'might' can't be used within conjunctions or conditionals!
-  `,
-  buttonText: "go to example trial"
+  <b>Corrections</b> can be made by clicking on <b>DELETE LAST WORD</b> in
+  the lower right of the screen.
+  </br>
+  When you are done, you can directly click on <b>SUBMIT SENTENCE</b> to proceed or
+  if you think that none of the provided sentences is adequate, you can also first
+  freely enter a sentence by clicking on <b>USE MY OWN WORDS</b> and then submit.
+  </br>
+  Then as usual, proceed with the next trial by clicking on <b>NEXT SCENE</b>.`,
+  buttonText: "go to example for task 2"
 });
 const instructions_fridge_procedure = magpieViews.view_generator("instructions", {
   trials: 1,
@@ -339,34 +353,35 @@ const instructions_fridge_reminder = magpieViews.view_generator("instructions", 
   trials: 1,
   name: "instructions_fridge_reminder",
   title: "Short reminder",
-  text: `<b>1</b>. A block is considered to <b>fall</b> as soon as it <b>drops
+  text: `Great &mdash; We will now start with the test phase which comprises in
+  total <b>13</b> scenes of block arrangements (task1 and task2 for each scene)
+  and <b>6</b> simple color questions in between.
+  <br/>
+  <br/>
+  <b>Plase remember</b>:
+  <br/>
+  <b>1</b>. A block is considered to <b>fall</b> as soon as it <b>drops
     off a platform</b> or <b>off another block</b> - that is, a block does not
     necessarily need to fall to the ground in order to count as falling.
     <br/>
-    <br/>
-    <b>2</b>. The colors do not have any meaning, all colored blocks represent
-    <b>common toy blocks</b>, they all have <b>the same properties</b> and they
-    <b>behave as in the training trials</b>.
-    <br/>
-    <br/>
-    <b>3</b>. In task 1, your estimates how likely you think two blocks will fall/not fall
-    do <b>not necessarily have to</b> sum up to 1 - we are interested in
-    <b>how likely</b> you think the events are <b>relative to each other</b>.
-    <br />
-    <b>A large difference</b> between two slider positions means: one event
-    is <b>much more plausible</b> than the other;
-    <b>identical slider positions</b> mean: <b>equally plausible</b> events.
-    <br/>
-    <br/>
-    <b>4</b>. The <b>sentence that you produce</b> is given as <b>hint to another
-    person</b> who has to adjust the four sliders of task 1 (without seeing the
-    picture) such that they are <b>as close as possible to your ratings</b>
-    from task 1.
-    <br/>
-    <br/>
-    We will now start with the test phase which comprises in total <b>13</b>
-    scenes of block arrangements (task1 and task2 for each scene) and <b>6</b>
-    simple color questions in between.`,
+  <b>2</b>. You won't be able to proceed to task 2 if the sum of your ratings
+  in task 1 is smaller than 1.
+  <br/>
+  <b>3</b>. The colors do not have any meaning, all colored blocks represent
+  <b>common toy blocks</b>, they all have <b>the same properties</b> and they
+  <b>behave as in the training trials</b>.
+  <br/>
+  <b>4</b>. In task 2, please describe the scene as adequatley as possible with
+  the given words.
+  <br/>
+  <br/>
+  <b>A final note</b>:
+  <br/>
+  You may have noticed that <b>might/might not</b> cannot be combined
+  with <b>and</b> or <b>if</b>, e.g. you may produce
+  '<i>the green block might fall</i>' but you <b>won't be able</b> to
+  produce '<i>the green block might fall but the blue block might not</i>'.
+  <br/>`,
   buttonText: "start test phase"
 });
 

@@ -43,7 +43,6 @@ animation {
   grid-column: 1 / 3;
   grid-row: 2 / 3;
   align-self: center;  /* according to column (top (start) down (end) center stretch)*/
-  justify-self: center;  /* according to row (left (start) cent<button id='smallMarginNextButton' class='grid-button magpie-view-button'>continue with task 2</button>er right (end) stretch)*/
 }
 
 /* used for space between buttons in training examples */
@@ -85,7 +84,7 @@ next {
   margin-top: -50px;
 }
 .qa-block {
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   margin-left: 100px;
 }
 .magpie-multi-slider-grid {

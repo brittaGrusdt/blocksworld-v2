@@ -113,12 +113,12 @@ picture {
   width: 120px;
 }
 
-input[type="range"].replied::-webkit-slider-thumb {
+input[type="range"].moved::-webkit-slider-thumb {
   -webkit-appearance: none;
   background: green;
 }
 
-input[type=range].replied::-moz-range-thumb {
+input[type=range].moved::-moz-range-thumb {
   background-color: green;
 }
 

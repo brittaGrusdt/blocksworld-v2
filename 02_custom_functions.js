@@ -58,8 +58,11 @@ const NB_TRAIN_TRIALS = TrainStimuli.list_all.length;
 const TRAIN_BTTN_IDS = [BLOCK_COLS_SHORT.train.join('')].concat(
   BLOCK_COLS_SHORT.train).concat(['none']);
 
-//globally initialize with 0
-total_moves = 0
+// const VAL_START_SLIDERS = 0
+const VAL_START_SLIDERS = 25
+
+//globally initialize
+total_moves = VAL_START_SLIDERS === 0 ? 0 : 4;
 
 // custom functions:
 toggleNextIfDone = function (button, condition) {
@@ -143,6 +146,14 @@ nbReplied = function(){
          ($("#response4").hasClass('replied')));
 }
 
+nbMoved = function(){
+  return(($("#response1").hasClass('moved')) +
+         ($("#response2").hasClass('moved')) +
+         ($("#response3").hasClass('moved')) +
+         ($("#response4").hasClass('moved')));
+}
+
+
 sumResponses = function(){
   return(parseInt($("#response1").val()) + parseInt($("#response2").val()) +
          parseInt($("#response3").val()) + parseInt($("#response4").val()));
@@ -157,22 +168,18 @@ idx2Event = function(idx){
   return(cat)
 }
 
-_computeAdjustedCells = function() {
-  var n_moved = nbReplied()
-  let responses = [$("#response1"), $("#response2"),
-                   $("#response3"), $("#response4")];
-
-   let rvals = _.map(responses, function(r){return(r.val())});
-   // console.log(rvals.join("-"))
+_computeAdjustedCells = function(button2Toggle, responseIDS, n_moved, sumTo) {
    //  go through sliders in the order that they were moved!
-   let order = _.map(responses, function(elem, idx){
-     let cat = idx2Event(idx);
-     return({i_time: parseInt(elem.attr('iReplied')),
-             id: "response" + (idx+1), category: cat})
+   let order = _.map(responseIDS, function(id){
+     let idx = _.last(id)
+     let cat = idx2Event(idx-1);
+     return({i_time: parseInt($("#" + id).attr('iReplied')), id, category: cat})
    });
-   order = order.filter(function(obj){return(obj.i_time !== undefined && obj.i_time !== 0)});
+   order = order.filter(function(obj){
+     return(obj.i_time !== undefined && !isNaN(obj.i_time) && obj.i_time !== 0)
+   });
    order = _.sortBy(order, 'i_time')
-   let ratios = _.map(_.range(1, n_moved), function(i, idx){
+   let ratios = _.map(_.range(0, n_moved-1), function(idx){
      let id_current = order[idx]["id"]
      let id_next = order[idx+1]["id"]
      var next_val = parseInt($("#" + id_next).val())
@@ -184,7 +191,7 @@ _computeAdjustedCells = function() {
    });
    let total = prods.reduce(function(val, acc){return(acc+val)}, 0);
    // *100 as we output nbs from 0 to 100 not decimals
-   let cell1_adj = 100 * (1/(1+total))
+   let cell1_adj = sumTo /(1+total)
    let id1 = order[0].id
    let obj1 = {val: cell1_adj, id: id1, idxSlider: _.last(id1), category: order[0].category}
    let adjusted = [obj1].concat(
@@ -194,18 +201,84 @@ _computeAdjustedCells = function() {
        idxSlider: _.last(id), category: order[idx+1]["category"]}
        return(new_val)
      }));
-   adjusted = _.sortBy(adjusted, 'idxSlider')
   return(adjusted)
 }
 
-_adjustCells = function(button2Toggle){
-  let normed_vals = _computeAdjustedCells()
-  normed_vals.forEach(function(obj){
+_setSliderVals = function(normed_vals, button2Toggle, toggleCondition){
+  let adjusted = _.sortBy(normed_vals, 'idxSlider')
+  adjusted.forEach(function(obj){
     $("#response" + obj.idxSlider).val(obj.val);
     $("#response" + obj.idxSlider).addClass('adjusted');
+    $("#output" + obj.idxSlider).val(Math.round(obj.val));
   });
-  toggleNextIfDone(button2Toggle, true);
-  return(normed_vals)
+  toggleNextIfDone(button2Toggle, toggleCondition);
+}
+
+_computeAdjustedCells2 = function(idxSlider, slider_ratings, button2Toggle) {
+  let responseIDS = ["response1", "response2", "response3", "response4"]
+  let s = parseInt($("#response" + idxSlider).val());
+  let n = slider_ratings.reduce(function(val, acc){return(acc + val)}, 0)
+  // console.log('s: ' + s + ' n: ' + n)
+  responseIDS.splice(idxSlider-1, 1);
+  let other_sliders = _.map(responseIDS, function(id){
+    return(parseInt($("#"+id).val()))
+  });
+  let sum_other_sliders = other_sliders.reduce(function(val, acc){return(val+acc)}, 0)
+  let indices = _.range(1,5).filter(function(val){return(val != idxSlider)});
+
+  let adjusted;
+  if(s == 0) {
+    let ids2Adjust = _.filter(responseIDS, function(id){return($("#" + id).val() != 0)})
+    let n_slider_not0 = ids2Adjust.length;
+    adjusted =
+      n_slider_not0 == 3 ? _computeAdjustedCells(button2Toggle, ids2Adjust, 3, 100) :
+      n_slider_not0 == 2 ? _computeAdjustedCells(button2Toggle, ids2Adjust, 2, 100) :
+      n_slider_not0 == 1 ? [{val: 100, id: ids2Adjust[0], idxSlider: _.last(ids2Adjust[0]),
+                             category: idx2Event(_.last(ids2Adjust[0]) - 1)}] :
+       _.map(responseIDS, function(id, idx){
+        return({val: 100/3, id: id, idxSlider: _.last(id), category: idx2Event(_.last(id) - 1)});
+        });
+  } else if(s == 100){
+    adjusted = _.map(indices, function(idx){
+      return({val: 0, id: "response" + idx,
+              idxSlider: idx, category: idx2Event(idx-1)})
+    });
+  } else if(sum_other_sliders == 0){
+    adjusted = _.map(indices, function(idx){
+      return({val: (100-s)/3, id: "response" + idx,
+              idxSlider: idx, category: idx2Event(idx-1)})
+    });
+  } else {
+    adjusted = _computeAdjustedCells(button2Toggle, responseIDS, 3, 100-s)
+  }
+  adjusted = adjusted.concat(
+    [{val: s, id: "response" + idxSlider, idxSlider, category: idx2Event(idxSlider-1)}]
+  );
+  adjusted = _.sortBy(adjusted, 'idxSlider')
+  console.log(_.map(adjusted, 'val').join("_"))
+  return(adjusted)
+}
+
+resetIf0 = function(id, button2Toggle, col1, col2){
+  let reset = false;
+  if(parseInt($("#"+id).val()) === 0){
+    button2Toggle.addClass("grid-button");
+    _.map(_.range(1,5), function(i){
+      $("#response" + i).val(0);
+      $("#output" + i).val(0);
+      if($("#response" + i).attr('iReplied') !== undefined){
+        $("#response" + i).attr('iReplied', 0);
+      }
+      if($("#response" + i).hasClass('replied')){
+        $("#response" + i).removeClass('replied');
+      }
+      total_moves = 0;
+    });
+    reset = true;
+    drawChart([{val: 0, category: col1 + " falls"}], col1)
+    drawChart([{val: 0, category: col2 + " falls"}], col2)
+  }
+  return(reset)
 }
 
 _checkSliderResponse = function (id, button2Toggle, test) {
@@ -214,53 +287,41 @@ _checkSliderResponse = function (id, button2Toggle, test) {
   $("#" + id)
     .on("change", function () {
       $("#" + id).addClass('replied');
+      $("#" + id).addClass('moved');
       total_moves = total_moves + 1;
-      slider_ratings =
-        [parseInt($("#response1").val()), parseInt($("#response2").val()),
-         parseInt($("#response3").val()), parseInt($("#response4").val())];
-      // make sure that not divided by 0 when all sliders are moved to 0!
-      let reset = false;
-      if(parseInt($("#"+id).val()) === 0){
-        button2Toggle.addClass("grid-button");
-        _.map(_.range(1,5), function(i){
-          $("#response" + i).val(0);
-          $("#output" + i).val(0);
-          if($("#response" + i).attr('iReplied') !== undefined){
-            $("#response" + i).attr('iReplied', 0);
-          }
-          if($("#response" + i).hasClass('replied')){
-            $("#response" + i).removeClass('replied');
-          }
-          total_moves = 0;
-        });
-        reset = true;
-        drawChart([{val: 0, category: col1 + " falls"}], col1)
-        drawChart([{val: 0, category: col2 + " falls"}], col2)
-      }
-      $("#" + id).attr('iReplied', total_moves);
+      let sliderIDS = ["response1", "response2", "response3", "response4"];
+      let sliders = _.map(sliderIDS, function(id){return($("#" + id))});
+      slider_ratings = _.map(sliders, function(s){return(parseInt(s.val()))});
+
+       $("#" + id).attr('iReplied', total_moves);
       let s = sumResponses()
-      if((s > 100) || (nbReplied() == 4 && !reset)) {
-        let adjusted_vals = _adjustCells(button2Toggle);
-        // setTimeout(_adjustCells(button2Toggle), 1000);
-        drawChart(adjusted_vals, col1);
-        drawChart(adjusted_vals, col2);
-        adjusted_vals.forEach(function(obj){
-          $("#output" + obj.idxSlider).val(Math.round(obj.val));
+      // let ratings = _computeAdjustedCells2(_.last(id), slider_ratings, button2Toggle)
+      // _setSliderVals(ratings, button2Toggle, true);
+      let ratings;
+      if(nbMoved()>=4){
+        let sids = sliderIDS.filter(function(id){
+          return($("#" + id).val() != 0)
         });
-        toggleNextIfDone(button2Toggle, true);
-        toggleNextIfDone($("#chartBttn"), true);
-        // console.log('normed sum: ' + sumResponses())
-      } else if(s == 100) {
-        let ratings = _.map(slider_ratings, function(val, idx){
+        if(sids.length == 0){
+          // if all set to 0 set all to 25
+          ratings = _.map(_.range(1,5), function(idx){
+            return({val: 25, id: "response" + (idx),
+                    idxSlider: idx, category: idx2Event(idx-1)});
+          });
+        } else {
+          ratings = _computeAdjustedCells(button2Toggle, sids, sids.length, 100)
+        }
+        _setSliderVals(ratings, button2Toggle, true);
+      } else {
+        // not yet moved all sliders, simply change slider + output values
+        ratings = _.map(slider_ratings, function(val, idx){
           return({val: val, id: "response" + (idx+1),
-                  idxSlider: idx+1, category: idx2Event(idx)});
+          idxSlider: idx+1, category: idx2Event(idx)});
         });
-        // ratings = ratings.filter(function(obj){return(obj.val !== 0)})
-        drawChart(ratings, col1);
-        drawChart(ratings, col2);
-        toggleNextIfDone(button2Toggle, true);
-        toggleNextIfDone($("#chartBttn"), true);
+        _setSliderVals(ratings, button2Toggle, s == 100);
       }
+      drawChart(ratings, col1);
+      drawChart(ratings, col2);
     });
 }
 
@@ -446,7 +507,6 @@ functionalityRunBttn = function(anim, answers){
       if (!anim.started) {
         anim.started = true;
         runAnimation(animation.engine);
-        toggleNextIfDone($("#buttonNextAnimation"), true);
         $('#runButton').addClass("grid-button");
         //selected answers can't be changed anymore
         if(answers == "sliders"){
@@ -455,9 +515,36 @@ functionalityRunBttn = function(anim, answers){
               document.getElementById("response" + i)
                 .disabled = true;
             });
-          let idx = id_correct == "ry" ? 1 : id_correct == "r" ? 2 :
-                    id_correct == "y" ? 3 : 4;
-          $('#response' + idx).addClass("correct-slider");
+          if(id_correct.includes("b") || id_correct.includes("g")) {
+            id_correct.replace("b", "r");
+            id_correct.replace("g", "y")
+          }
+          let correct =
+            id_correct == "ry" ? {idx: 1, img: "red-yellow.png"} :
+            id_correct == "r" ? {idx: 2, img: "red-not-yellow.png"} :
+            id_correct == "y" ? {idx: 3, img: "not-red-yellow.png"} :
+                                {idx: 4, img: "not-red-not-yellow.png"};
+
+          $('#response' + correct.idx).addClass("correct-slider");
+          let val_correct = $("#response" + correct.idx).val();
+          setTimeout(function () {
+            new $.Zebra_Dialog(`The icon below shows what actually happened &mdash;
+              you assigned this outcome a ` + `chance of <b>` + val_correct + "</b>%.<br/>" +
+            `Notice that even if you didn't assign this event a 100% chance of occurring,
+            this could be a good guess, since, due to chance, other outcomes may
+            have been possible. <br/>
+            Keep using the sliders to express your <b>genuine
+            beliefs and uncertainty </b> about what will happen in each scene.<br/><br/>`,
+            { type: false,
+              keyboard: true,
+              source: {
+                iframe: {src: "stimuli/img/icons/" + correct.img},
+              },
+              custom_class: "trainResult",
+              title: "Actual outcome"
+            });
+            toggleNextIfDone($("#buttonNextAnimation"), true);
+          }, 7000);
         } else { // buttons
             $('#' + id_correct).addClass("correct");
             _.map(TRAIN_BTTN_IDS, function(id){

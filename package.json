@@ -9,7 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "lodash": ">=4.17.19"
+    "lodash": ">=4.17.19",
+    "zebra_dialog": "^3.0.5"
   },
   "devDependencies": {
     "magpie-modules": "^0.1.2",

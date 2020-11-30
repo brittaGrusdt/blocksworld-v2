@@ -80,7 +80,16 @@ const multi_slider_generator = {
     $(".magpie-view")
       .append(answer_container_generator(config, CT));
     let button = $("#smallMarginNextButton");
-    total_moves = 0 // globally defined
+    let ratings = _.map(_.range(4), function(idx){
+      if(VAL_START_SLIDERS != 0){
+        $('#response' + (idx+1)).addClass('replied');
+        $('#response' + (idx+1)).attr('iReplied', idx+1);
+      }
+      return({val: VAL_START_SLIDERS, id: "response" + (idx+1),
+              idxSlider: idx+1, category: idx2Event(idx)});
+    });
+    drawChart(ratings, "blue");
+    drawChart(ratings, "green");
     // function for debugging - if "y" is pressed, the slider will change
     if (DEBUG) {
       addKeyToMoveSliders(button);
@@ -487,11 +496,23 @@ const animation_view_sliders = {
         cleared = true;
       }
     });
+    let ratings = _.map(_.range(1,5), function(idx){
+      if(VAL_START_SLIDERS != 0){
+        $('#response' + idx).addClass('replied');
+        $('#response' + idx).attr('iReplied', idx);
+      }
+      return({val: VAL_START_SLIDERS, id: "response" + idx,
+              idxSlider: idx, category: idx2Event(idx-1)});
+    });
+    console.log(ratings)
+
     addCheckSliderResponse($('#runButton'), false);
     DEBUG ? addKeyToMoveSliders($("#runButton")) : null;
 
     let anim = {animation, cleared, CT, started:false,  trial_name:'animation_slider'}
     functionalityRunBttn(anim, "sliders");
     functionalityBttnNextAnimation(getSliderResponse, magpie, anim);
+    drawChart(ratings, "red");
+    drawChart(ratings, "yellow");
   }
 };

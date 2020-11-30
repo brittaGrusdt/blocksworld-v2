@@ -27,6 +27,7 @@ $("document")
       instructions_train_sliders_choices,
       slider_choice_training,
       instructions_train_slider_ratings,
+      instructions_train_sliders_procedure,
       animation_view_sliders,
       // Testing //
       instructions_fridge,
@@ -48,7 +49,9 @@ $("document")
       progress_bar: {
         // list the view-names of the views for which you want a progress bar
         // multiple_slider.name,
-        in: [animation_view_sliders.name].concat(_.map(views_test, 'name')),
+        in: [slider_choice_training.name, animation_view_sliders.name].concat(
+          _.map(views_test, 'name')
+        ),
       // Possible styles are "default", "separate" and "chunks"
         style: "default",
         width: 100

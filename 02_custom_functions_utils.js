@@ -84,7 +84,7 @@ _htmlSlider = function (idxSlider, utterance, options, value) {
   let answerID = "answer" + idxSlider
   let outputID = "output" + idxSlider
   let outputName = "outputSlider" + idxSlider
-  value = value == "" ? 0 : value;
+  value = value == "" ? VAL_START_SLIDERS : value;
 
   let start = "<s" + idxSlider + " class='magpie-grid-slider' id=" + sliderID + ">";
   let end = "</s" + idxSlider + ">";

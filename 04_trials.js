@@ -325,7 +325,7 @@ let other_ids = [
   ["red-probably-yellow", "yellow-probably-red"]
 ];
 
-let part1 = `The sliders represent the beliefs of a participant who <br/><b>` ;
+let part1 = `The sliders represent the beliefs of a person who <br/><b>` ;
 let questions1 = [
   part1 + `is <b>completely uncertain</b> whether the blocks fall.`,
   part1 + `thinks that either both blocks or neither of the two blocks fall.`
@@ -379,7 +379,8 @@ for(idx in [0, 3, 4]){
   let id = other_ids[idx][i_wrong]
   id = idx==0 ? id + "-not0" : id;
   ids_no.push(id) // other picture
-  qs_no.push(other_questions[idx][i] + "</b>") // but same question
+  let q = other_questions[idx][i].replace("thinks that", "is very confident that");
+  qs_no.push(q + "</b>") // but same question
 }
 
 slider_choice_trials = _.shuffle(slider_choice_trials.concat(

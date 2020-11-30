@@ -480,11 +480,6 @@ input[type=range].correct-slider::-moz-range-track {
   margin-bottom: 0px;
 }
 
-#chartBttn {
-  margin-top: 0px;
-  margin-bottom: 0px;
-}
-
 .smallMarginDiv {
   padding-top: 0px;
   padding-bottom: 0px;
@@ -540,4 +535,11 @@ input[type=range].correct-slider::-moz-range-track {
   color: black;
   text-decoration: none;
   cursor: pointer;
+}
+
+ /* .trainResult .ZebraDialog_Title {
+    background: #330066;
+} */
+.trainResult .ZebraDialog_Body {
+    font-size: 21px;
 }

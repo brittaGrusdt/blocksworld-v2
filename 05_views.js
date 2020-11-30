@@ -126,9 +126,7 @@ const instructions_train_sliders_choices = magpieViews.view_generator("instructi
   trials: 1,
   name: "instructions_train_sliders_choices",
   title: "Instructions Training 1",
-  text: `In the main experiment, you will see different block arrangements.
-  For each presented arrangement we will ask you to move sliders to indicate
-  <b>how likely</b> you think it is for certain <b>blocks to fall</b>.
+  text: `In the later parts of this experiment, you will see pictures showing colored blocks arranged in certain ways.  For each presented picture you are asked to indicate, using adjustable sliders, how likely it is that certain blocks will fall.
   <br/>
   <br/>
   Each event is represented by a different icon:
@@ -156,13 +154,14 @@ const instructions_train_slider_ratings = magpieViews.view_generator("instructio
   name: "instructions_train_sliders",
   title: "Training 2",
   text: `Great &mdash; we will now proceed with the second part of the training phase
-  where you should familiarize yourself with the stimuli.
+  where you should familiarize yourself with the pictures we will use in the
+  later part of the experiment.
   <br/>
-  You will see different block arrangements. For each presented arrangement we
-  would like to know <b>how likely</b> you think it is for certain
+  You will see pictures showing various arrangements of colored blocks. For each
+  presented arrangement we would like to know <b>how likely</b> you think it is for certain
   <b>blocks to fall</b> (<b>off a platform or off another block &mdash;
     not necessarily to the ground</b>).
-    <br/>
+  <br/><br/>
   The blocks represent common toy blocks <b>without</b> any special properties
   and the different colors do <b>not have</b> any meaning.
   Your task is to indicate how likely you think a certain event happens by
@@ -170,47 +169,38 @@ const instructions_train_slider_ratings = magpieViews.view_generator("instructio
     right: <i>certain event</i>).
   <br/>
   <br/>
-  After you have moved the sliders, click on <b>RUN</b> to start the animation and see what happens.
+  After you have adjusted the sliders in such a way as to express your genuine
+  belief about how likely each possible outcome is, click on <b>RUN</b> to start
+  the animation and see what happens.
   <br/>
-  <b>Please note</b>:
-  <br/>
-  <b>1</b>. When the sum of your slider ratings is greater than one, they will
-  <b>automatically be adjusted to sum up to 1</b> &mdash; while the proportions how likely
-  you rated the events <b>relative to each other</b> are retained.
-  <br/>
-  <b>2</b>. In each trial you can <b>reset</b> your rating by <b>setting one slider to 0</b> which will <b>set all four sliders to 0</b>.
-  <br/>
-  <b>3</b>. The <b>sum of your ratings must not be smaller than 1</b>
-  &mdash; otherwise you won't be able to proceed to the next trial.
-  As soon as they sum up to 1, you will see two <b>piecharts</b> next to the
-  sliders that visualize <b>the probability that you assign for the blue, respectively
-  the green block</b>, to fall.
+  When the animation stops, you will get <b>feedback</b> about what actually happened.
+  Afterwards, click on <b>NEXT SCENE</b> to proceed with the next trial.
   <br/>
   <br/>
-  `
+  Before we start, we'd like to give you some more information about how to indicate your
+  beliefs by adjusting the sliders.
+  `,
+  buttonText: "continue"
 })
 
 const instructions_train_sliders_procedure = magpieViews.view_generator("instructions", {
   trials: 1,
   name: "instructions_train_sliders_procedure",
-  title: "Procedure Training Phase",
-  text: `You have to move all four sliders (the circles on the sliders will turn green!)
-  such that you will be able to start the animation by clicking on <b>RUN</b>.
-  The <b>slider of the event that occurred</b> will be <b>highlighted in green</b>.
+  title: "Slider Ratings",
+  text: `
+  <b>1</b>. Each slider indicates the <b>plausibility</b> that a given event will happen.
+  Eventually, we want them to indicate the <b>percent chance</b> that a given event will happen, therefore all possible outcomes will have to sum to 100. You don't have to worry about this: after you have moved all four sliders, <b>your ratings will be readjusted automatically</b> in order to sum up to 100 &mdash; but they will <b>conserve their relative position to each other</b>.
   <br/>
   <br/>
-  The value of each slider will be shown to its right. Please note that your
-  estimates do <b>not necessarily have to</b> sum up to 1 as we are interested in
-  <b>how likely</b> you think the events are <b>relative to each other</b>.
-  <br />
-  In other words, <b>a large difference</b> between two slider positions means that
-  one event is rated as <b>much more plausible</b> than the other.
-  Contrary to that, <b>identical slider positions</b> mean that the events are rated as
-  being <b>equally plausible/implausible</b>.
-  <br />
-  <br />
-  After you moved all four sliders, you can click on <b>NEXT SCENE</b> to
-  continue with the next trial.`,
+  <b>2</b>. If you are not happy with the automatically readjusted values, <b>please correct them such that they represent your genuine beliefs</b>.
+  To make it easier for you, you will additionally see two piecharts next to the sliders that indicate the derived probability that you assigned in total to the event that the two colored blocks fall respectively.
+  <br/>
+  <br/>
+  <b>3</b>. Note that changing the position of a slider <b>after they were automatically readjusted to sum up to 100</b>, will have an effect on <b>ALL</b> other sliders as well. This is something you should get used to during this training phase.
+  In particular, what happens is that, <b>when you move one slider in either direction, all other sliders will conserve their relative position to each other</b>. For example, if slider A indicated a percent chance that was two times higher than that of slider B, then adjusting a third slider C will cause the ratings of A and B to change in absolute terms, but it will preserve the fact that A was rated two times as likely as B.
+  <br/>
+  <br/>
+  <b>4</b>. When you set all 4 sliders to 0, they will all be reset to 25 which means that each event is equally likely.`,
   buttonText: "start training"
 });
 // <img src=stimuli/img/icons/red.png>
@@ -231,7 +221,7 @@ const instructions_train3 = magpieViews.view_generator("instructions", {
    <br />
   The more certain you are that an event <b>will</b> occur, the more you should
   position the corresponding slider towards the
-  <b>right end</b> (<i>certain</i>/1) and the more certain you are that it
+  <b>right end</b> (<i>certain</i>/) and the more certain you are that it
   <b>will not</b> occur, the more you should position its slider towards the
   <b>left end</b> (<i>will not happen</i>).
   <br />
@@ -240,7 +230,7 @@ const instructions_train3 = magpieViews.view_generator("instructions", {
   0.50.
   <br />
   <br />
-  Note, that your estimates <b>may</b>, but <b>do not have to</b> sum up to 1.
+  Note, that your estimates <b>may</b>, but <b>do not have to</b> sum up to 100.
   <br />
   <br />
   From now on, you won't get feedback anymore about what will actually happen.
@@ -374,20 +364,18 @@ const instructions_fridge_reminder = magpieViews.view_generator("instructions", 
   and <b>6</b> simple color questions in between.
   <br/>
   <br/>
-  <b>Plase remember</b>:
+  <b>Plase keep in mind</b>:
   <br/>
   <b>1</b>. A block is considered to <b>fall</b> as soon as it <b>drops
     off a platform</b> or <b>off another block</b> - that is, a block does not
     necessarily need to fall to the ground in order to count as falling.
     <br/>
-  <b>2</b>. You won't be able to proceed to task 2 if the sum of your ratings
-  in task 1 is smaller than 1.
   <br/>
-  <b>3</b>. The colors do not have any meaning, all colored blocks represent
+  <b>2</b>. The colors do not have any meaning, all colored blocks represent
   <b>common toy blocks</b>, they all have <b>the same properties</b> and they
   <b>behave as in the training trials</b>.
   <br/>
-  <b>4</b>. In task 2, please describe the scene <b>as adequately as possible</b>
+  <b>3</b>. In task 2, please describe the scene <b>as adequately as possible</b>
   with the given words.
   <br/>
   <br/>
@@ -442,9 +430,19 @@ const slider_choice_training = magpieViews.view_generator('sentence_choice', {
     trial_data = magpieUtils.view.save_config_trial_data(config.data[CT], trial_data);
     magpie.trial_data.push(trial_data);
     if (response === config.data[CT].expected) {
-        alert("Your answer is correct! Yey! :)");
+        $.Zebra_Dialog(`Your answer is correct! Yey!`,
+        { type: "confirmation",
+          keyboard: true,
+          custom_class: "trainResult",
+          title: ""
+        });
     } else {
-      alert("Sorry you answer was wrong. :(")
+      $.Zebra_Dialog(`Sorry you answer was wrong.`,
+      { type: "error",
+        keyboard: true,
+        custom_class: "trainResult",
+        title: ""
+      });
     }
     magpie.findNextView();
   });

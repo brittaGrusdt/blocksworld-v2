@@ -82,7 +82,7 @@ const multi_slider_generator = {
     let button = $("#smallMarginNextButton");
     let ratings = _.map(_.range(4), function(idx){
       if(VAL_START_SLIDERS != 0){
-        $('#response' + (idx+1)).addClass('replied');
+        // $('#response' + (idx+1)).addClass('replied');
         $('#response' + (idx+1)).attr('iReplied', idx+1);
       }
       return({val: VAL_START_SLIDERS, id: "response" + (idx+1),
@@ -141,7 +141,8 @@ const multi_slider_generator = {
     $(".magpie-view")
       .append(answer_container_generator(config, CT));
     [1,2,3,4].forEach(function(i){
-      $("#response" + i).addClass('replied');
+      // $("#response" + i).addClass('replied');
+      $("#response" + i).addClass('moved');
       document.getElementById("response" + i).disabled = true;
     });
 
@@ -498,13 +499,13 @@ const animation_view_sliders = {
     });
     let ratings = _.map(_.range(1,5), function(idx){
       if(VAL_START_SLIDERS != 0){
-        $('#response' + idx).addClass('replied');
+        // $('#response' + idx).addClass('replied');
         $('#response' + idx).attr('iReplied', idx);
       }
       return({val: VAL_START_SLIDERS, id: "response" + idx,
               idxSlider: idx, category: idx2Event(idx-1)});
     });
-    console.log(ratings)
+    // console.log(ratings)
 
     addCheckSliderResponse($('#runButton'), false);
     DEBUG ? addKeyToMoveSliders($("#runButton")) : null;

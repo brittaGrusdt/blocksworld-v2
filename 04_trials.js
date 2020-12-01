@@ -305,7 +305,7 @@ fridge_trials = _.map(fridge_trials, function (trial, i) {
    'optionLeft', 'optionRight', 'expected'].forEach(function(key){
     trial[key] = '';
   });
-  trial.QUD = "Task 2: Please describe what happens in the picture as adequately as possible.",
+  trial.QUD = "Task 2: please describe to a critical friend as adequately as possible <br/>what happens with the blue and the green block in the picture.",
   trial.sentence = "";
   trial = _.omit(trial, ['icon1', 'icon2', 'icon3', 'icon4']);
   return trial
@@ -314,6 +314,7 @@ fridge_trials = _.map(fridge_trials, function (trial, i) {
 let fridge_ex = Object.assign({}, fridge_trials[0])
 fridge_ex.picture = "stimuli/img/train_slider_fridge/ind2_test_colors.jpg";
 fridge_ex.id = id_slider
+fridge_ex.QUD = `TRY OUT EXAMPLE &mdash;` + fridge_trials[0].QUD;
 const TRAIN_FRIDGE_TRIALS = [fridge_ex];
 
 let slider_choice_ids1 = ["all-equal", "both-or-none"]

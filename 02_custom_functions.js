@@ -75,7 +75,7 @@ automaticallySelectAnswer = function (responseID, button2Toggle) {
   document.getElementById(responseID)
     .value = Math.floor(Math.random() * 101);
   $("#" + responseID)
-    .addClass('replied');
+    .addClass('moved');
 }
 
 addKeyToMoveSliders = function (button2Toggle) {
@@ -87,7 +87,7 @@ addKeyToMoveSliders = function (button2Toggle) {
       automaticallySelectAnswer("response" + id_nb, button2Toggle);
       counter += 1;
     }
-    toggleNextIfDone(button2Toggle, nbReplied() === 4);
+    toggleNextIfDone(button2Toggle, nbMoved() === 4);
     return keyName;
   });
 }
@@ -137,13 +137,6 @@ _slidersAdjusted = function(){
                  $("#response2").hasClass('adjusted'),
                  $("#response3").hasClass('adjusted'),
                  $("#response4").hasClass('adjusted')]))
-}
-
-nbReplied = function(){
-  return(($("#response1").hasClass('replied')) +
-         ($("#response2").hasClass('replied')) +
-         ($("#response3").hasClass('replied')) +
-         ($("#response4").hasClass('replied')));
 }
 
 nbMoved = function(){
@@ -214,79 +207,78 @@ _setSliderVals = function(normed_vals, button2Toggle, toggleCondition){
   toggleNextIfDone(button2Toggle, toggleCondition);
 }
 
-_computeAdjustedCells2 = function(idxSlider, slider_ratings, button2Toggle) {
-  let responseIDS = ["response1", "response2", "response3", "response4"]
-  let s = parseInt($("#response" + idxSlider).val());
-  let n = slider_ratings.reduce(function(val, acc){return(acc + val)}, 0)
-  // console.log('s: ' + s + ' n: ' + n)
-  responseIDS.splice(idxSlider-1, 1);
-  let other_sliders = _.map(responseIDS, function(id){
-    return(parseInt($("#"+id).val()))
-  });
-  let sum_other_sliders = other_sliders.reduce(function(val, acc){return(val+acc)}, 0)
-  let indices = _.range(1,5).filter(function(val){return(val != idxSlider)});
+// _computeAdjustedCells2 = function(idxSlider, slider_ratings, button2Toggle) {
+//   let responseIDS = ["response1", "response2", "response3", "response4"]
+//   let s = parseInt($("#response" + idxSlider).val());
+//   let n = slider_ratings.reduce(function(val, acc){return(acc + val)}, 0)
+//   // console.log('s: ' + s + ' n: ' + n)
+//   responseIDS.splice(idxSlider-1, 1);
+//   let other_sliders = _.map(responseIDS, function(id){
+//     return(parseInt($("#"+id).val()))
+//   });
+//   let sum_other_sliders = other_sliders.reduce(function(val, acc){return(val+acc)}, 0)
+//   let indices = _.range(1,5).filter(function(val){return(val != idxSlider)});
+//
+//   let adjusted;
+//   if(s == 0) {
+//     let ids2Adjust = _.filter(responseIDS, function(id){return($("#" + id).val() != 0)})
+//     let n_slider_not0 = ids2Adjust.length;
+//     adjusted =
+//       n_slider_not0 == 3 ? _computeAdjustedCells(button2Toggle, ids2Adjust, 3, 100) :
+//       n_slider_not0 == 2 ? _computeAdjustedCells(button2Toggle, ids2Adjust, 2, 100) :
+//       n_slider_not0 == 1 ? [{val: 100, id: ids2Adjust[0], idxSlider: _.last(ids2Adjust[0]),
+//                              category: idx2Event(_.last(ids2Adjust[0]) - 1)}] :
+//        _.map(responseIDS, function(id, idx){
+//         return({val: 100/3, id: id, idxSlider: _.last(id), category: idx2Event(_.last(id) - 1)});
+//         });
+//   } else if(s == 100){
+//     adjusted = _.map(indices, function(idx){
+//       return({val: 0, id: "response" + idx,
+//               idxSlider: idx, category: idx2Event(idx-1)})
+//     });
+//   } else if(sum_other_sliders == 0){
+//     adjusted = _.map(indices, function(idx){
+//       return({val: (100-s)/3, id: "response" + idx,
+//               idxSlider: idx, category: idx2Event(idx-1)})
+//     });
+//   } else {
+//     adjusted = _computeAdjustedCells(button2Toggle, responseIDS, 3, 100-s)
+//   }
+//   adjusted = adjusted.concat(
+//     [{val: s, id: "response" + idxSlider, idxSlider, category: idx2Event(idxSlider-1)}]
+//   );
+//   adjusted = _.sortBy(adjusted, 'idxSlider')
+//   console.log(_.map(adjusted, 'val').join("_"))
+//   return(adjusted)
+// }
 
-  let adjusted;
-  if(s == 0) {
-    let ids2Adjust = _.filter(responseIDS, function(id){return($("#" + id).val() != 0)})
-    let n_slider_not0 = ids2Adjust.length;
-    adjusted =
-      n_slider_not0 == 3 ? _computeAdjustedCells(button2Toggle, ids2Adjust, 3, 100) :
-      n_slider_not0 == 2 ? _computeAdjustedCells(button2Toggle, ids2Adjust, 2, 100) :
-      n_slider_not0 == 1 ? [{val: 100, id: ids2Adjust[0], idxSlider: _.last(ids2Adjust[0]),
-                             category: idx2Event(_.last(ids2Adjust[0]) - 1)}] :
-       _.map(responseIDS, function(id, idx){
-        return({val: 100/3, id: id, idxSlider: _.last(id), category: idx2Event(_.last(id) - 1)});
-        });
-  } else if(s == 100){
-    adjusted = _.map(indices, function(idx){
-      return({val: 0, id: "response" + idx,
-              idxSlider: idx, category: idx2Event(idx-1)})
-    });
-  } else if(sum_other_sliders == 0){
-    adjusted = _.map(indices, function(idx){
-      return({val: (100-s)/3, id: "response" + idx,
-              idxSlider: idx, category: idx2Event(idx-1)})
-    });
-  } else {
-    adjusted = _computeAdjustedCells(button2Toggle, responseIDS, 3, 100-s)
-  }
-  adjusted = adjusted.concat(
-    [{val: s, id: "response" + idxSlider, idxSlider, category: idx2Event(idxSlider-1)}]
-  );
-  adjusted = _.sortBy(adjusted, 'idxSlider')
-  console.log(_.map(adjusted, 'val').join("_"))
-  return(adjusted)
-}
-
-resetIf0 = function(id, button2Toggle, col1, col2){
-  let reset = false;
-  if(parseInt($("#"+id).val()) === 0){
-    button2Toggle.addClass("grid-button");
-    _.map(_.range(1,5), function(i){
-      $("#response" + i).val(0);
-      $("#output" + i).val(0);
-      if($("#response" + i).attr('iReplied') !== undefined){
-        $("#response" + i).attr('iReplied', 0);
-      }
-      if($("#response" + i).hasClass('replied')){
-        $("#response" + i).removeClass('replied');
-      }
-      total_moves = 0;
-    });
-    reset = true;
-    drawChart([{val: 0, category: col1 + " falls"}], col1)
-    drawChart([{val: 0, category: col2 + " falls"}], col2)
-  }
-  return(reset)
-}
+// resetIf0 = function(id, button2Toggle, col1, col2){
+//   let reset = false;
+//   if(parseInt($("#"+id).val()) === 0){
+//     button2Toggle.addClass("grid-button");
+//     _.map(_.range(1,5), function(i){
+//       $("#response" + i).val(0);
+//       $("#output" + i).val(0);
+//       if($("#response" + i).attr('iReplied') !== undefined){
+//         $("#response" + i).attr('iReplied', 0);
+//       }
+//       if($("#response" + i).hasClass('replied')){
+//         $("#response" + i).removeClass('replied');
+//       }
+//       total_moves = 0;
+//     });
+//     reset = true;
+//     drawChart([{val: 0, category: col1 + " falls"}], col1)
+//     drawChart([{val: 0, category: col2 + " falls"}], col2)
+//   }
+//   return(reset)
+// }
 
 _checkSliderResponse = function (id, button2Toggle, test) {
   let col1 = test ? "blue" : "red";
   let col2 = test ? "green" : "yellow";
   $("#" + id)
     .on("change", function () {
-      $("#" + id).addClass('replied');
       $("#" + id).addClass('moved');
       total_moves = total_moves + 1;
       let sliderIDS = ["response1", "response2", "response3", "response4"];
@@ -295,8 +287,6 @@ _checkSliderResponse = function (id, button2Toggle, test) {
 
        $("#" + id).attr('iReplied', total_moves);
       let s = sumResponses()
-      // let ratings = _computeAdjustedCells2(_.last(id), slider_ratings, button2Toggle)
-      // _setSliderVals(ratings, button2Toggle, true);
       let ratings;
       if(nbMoved()>=4){
         let sids = sliderIDS.filter(function(id){

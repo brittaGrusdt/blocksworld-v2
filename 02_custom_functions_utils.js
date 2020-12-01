@@ -76,6 +76,9 @@ _htmlSliderQuestion = function (idx_question) {
 _updateSliderOutput = function(id, val){
   let idx = _.last(id);
   $('#output' + idx).val(val);
+  $('#response' + idx).addClass('moved');
+  toggleNextIfDone($("#runButton"), nbMoved()==4);
+  toggleNextIfDone($("#smallMarginNextButton"), nbMoved()==4);
 }
 
 _htmlSlider = function (idxSlider, utterance, options, value) {
@@ -93,8 +96,9 @@ _htmlSlider = function (idxSlider, utterance, options, value) {
   let html_slider = start +
     `<span class='magpie-response-slider-option optionWide thick'>` + options.left + `</span>
      <input type='range' id=` + responseID + ` name=` + answerID +
-    ` class='magpie-response-slider slider-width' min='0' max='100' step='5' value='` + value +
-    `' oninput="_updateSliderOutput(this.id, this.value)"'` + `>` +
+    ` class='magpie-response-slider slider-width' min='0' max='100' step='1' value='` + value +
+    `' oninput="_updateSliderOutput(this.id, this.value)"'` +
+    `' onclick="_updateSliderOutput(this.id, this.value)"'` + `>` +
     // `' oninput='` + outputID + `.value=` + responseID + `.value'>` +
     `<span class='magpie-response-slider-option optionWide thick'>` + options.right + `</span>
     <output name="` + outputName + `" id=` + outputID + ` class="thick">` + value  + `</output>` +

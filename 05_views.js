@@ -153,7 +153,7 @@ const instructions_train_slider_ratings = magpieViews.view_generator("instructio
   trials: 1,
   name: "instructions_train_sliders",
   title: "Training 2",
-  text: `Great &mdash; we will now proceed with the second part of the training phase
+  text: `Wonderful &mdash; we will now proceed with the second part of the training phase
   where you should familiarize yourself with the pictures we will use in the
   later part of the experiment.
   <br/>
@@ -260,7 +260,7 @@ const instructions_fridge = magpieViews.view_generator("instructions", {
   set of words you can select next depends on the
   previously chosen word (some words will be greyed out).
   <br/>
-  The following types of sentences will be producable:
+  The following types of sentences will be producible:
   <br/>
   <b>1.</b> <b>simple assertions</b>, e.g. <i>The green block
   falls</i>, <i>The blue block does not fall</i>, ...
@@ -297,7 +297,7 @@ const instructions_fridge_procedure = magpieViews.view_generator("instructions",
   <b>DELETE LAST WORD</b> in the lower right of the screen.
   <br />
   <b>3</b>. When you have produced a grammatical sentence (<i>not all
-    grammatical sentences are producable!</i>), which is shown
+    grammatical sentences are producible!</i>), which is shown
   word by word in a box in the lower left, you will be able to click on
   <b>SUBMIT SENTENCE</b> to continue.
   <br />
@@ -359,7 +359,7 @@ const instructions_fridge_reminder = magpieViews.view_generator("instructions", 
   trials: 1,
   name: "instructions_fridge_reminder",
   title: "Short reminder",
-  text: `Great &mdash; We will now start with the test phase which comprises in
+  text: `Awesome &mdash; We will now start with the test phase which comprises in
   total <b>13</b> scenes of block arrangements (task1 and task2 for each scene)
   and <b>6</b> simple color questions in between.
   <br/>

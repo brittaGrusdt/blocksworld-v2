@@ -374,7 +374,7 @@ const instructions_fridge_reminder = magpieViews.view_generator("instructions", 
   and <b>6</b> simple color questions in between.
   <br/>
   <br/>
-  <b>Plase keep in mind</b>:
+  <b>Please keep in mind</b>:
   <br/>
   <b>1</b>. A block is considered to <b>fall</b> as soon as it <b>drops
     off a platform</b> or <b>off another block</b> - that is, a block does not
@@ -384,9 +384,10 @@ const instructions_fridge_reminder = magpieViews.view_generator("instructions", 
   <b>2</b>. The colors do not have any meaning, all colored blocks represent
   <b>common toy blocks</b>, they all have <b>the same properties</b> and they
   <b>behave as in the training trials</b>.
-  <br/>
+  <br/><br/>
   <b>3</b>. In task 2, please describe the scene <b>as adequately as possible</b>
-  with the given words.
+  with the given words &mdash; namely to a critical friend who expects you to say
+  only what you are confident about.
   <br/>
   <br/>
   <b>A final note</b>:

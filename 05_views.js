@@ -133,7 +133,8 @@ const instructions_train_sliders_choices = magpieViews.view_generator("instructi
   <br />
   A falling block is represented by a skewed rectangle and a block that
   does not fall is represented by a rectangle with a line below, e.g.
-  the following icon represents the event
+  the following icon represents the event:
+  <br/>
   <br/>
   '<i>The <b>green</b> block <b>falls</b>, but the <b>yellow</b> block
   <b>does not fall</b></i>'.
@@ -143,10 +144,10 @@ const instructions_train_sliders_choices = magpieViews.view_generator("instructi
   <img src='stimuli/img/icons/not-yellow.png' />
   <br/>
   <br/>
-  Before we start with the actual training trials, there will be <b>10</b> trials
+  Before we start with the actual training trials, there will be <b>10 trials and 3 questions</b>
   which aim to <b>familiarize you with how to use the sliders</b> to indicate your beliefs.
   `,
-  buttonText: "continue with slider examples"
+  buttonText: "start 1st part training"
 });
 
 const instructions_train_slider_ratings = magpieViews.view_generator("instructions", {
@@ -187,7 +188,7 @@ const instructions_train_sliders_procedure = magpieViews.view_generator("instruc
   trials: 1,
   name: "instructions_train_sliders_procedure",
   title: "Slider Ratings",
-  text: `Remember the sliders you just saw in the training phase:
+  text: `Remember the sliders you just saw in the first part of the training phase:
   <br/><br/>
   <img src="stimuli/img/slider.png" class="instruction_img"><br/><br/>
   <b>1</b>. Each slider indicates the <b>plausibility</b> that a given event will happen.
@@ -195,7 +196,7 @@ const instructions_train_sliders_procedure = magpieViews.view_generator("instruc
   <br/>
   <br/>
   <b>2</b>. If you are not happy with the automatically readjusted values, <b>please correct them such that they represent your genuine beliefs</b>.
-  To make it easier for you, you will additionally see two visualizations next to the sliders (piecharts to be precise) that indicate the derived probability that you assigned in total to the event that the two colored blocks fall respectively. In the following example  picture, the left piechart for instance indicates a quite large belief of the blue block to fall (in the experiment, hover over piechart to see the exact values) and a still larger belief of the green block to fall.
+  To make it easier for you, you will additionally see two visualizations next to the sliders (piecharts to be precise) that indicate the <b>derived probability</b> that you assigned <b>in total</b> to the <b>event that the two colored blocks fall respectively</b>. In the following example  picture, the left piechart for instance indicates a quite large belief of the blue block to fall (in the experiment, <b>hover over piechart</b> to see the exact percentages) and a still larger belief of the green block to fall.
   <br/>
   <br/>
   <img src="stimuli/img/piecharts.png" class="instruction_img_small"><br/>
@@ -458,22 +459,6 @@ const slider_choice_training = magpieViews.view_generator('sentence_choice', {
   }
 });
 
-const sentence_choice_custom = magpieViews.view_generator("sentence_choice", {
-  trials: color_vision_test.length,
-  name: "color-vision",
-  data: _.shuffle(color_vision_test)
-}, {
-  stimulus_container_generator: function (config, CT) {
-    return `<div class='magpie-view'>
-    <h1 class='magpie-view-title'>${config.title}</h1>
-    <p class='magpie-view-question magpie-view-qud'>${config.data[CT].QUD}</p>
-    <div class='magpie-view-stimulus-container'>
-      <img src="${config.data[CT].picture}" class = "img"/>
-    </div>
-  </div>`;
-  }
-});
-
 // experimental phase trials Experiment1
 const multiple_slider = magpieViews.view_generator(
   "slider_rating", {
@@ -536,6 +521,16 @@ const instruction_slider_example = magpieViews.view_generator(
     handle_response_function: multi_slider_generator.example_handle_response_function
   }
 );
+
+const attention_check_view = magpieViews.view_generator('dropdown_choice', {
+    trials: 3,
+    name: "attention_check" + idx,
+    data: attention_check_trials
+  }, {
+    stimulus_container_generator: dropdown_choice_generator.stimulus_container_gen_attention,
+    answer_container_generator: dropdown_choice_generator.answer_container_gen_attention,
+    handle_response_function: dropdown_choice_generator.handle_response_function
+  });
 
 fridge_view = function(idx){
   let view = magpieViews.view_generator(

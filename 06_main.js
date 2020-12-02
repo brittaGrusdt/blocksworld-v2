@@ -25,6 +25,7 @@ $("document")
       instructions_general,
       // * Training with sliders* //
       instructions_train_sliders_choices,
+      attention_check_view,
       slider_choice_training,
       instructions_train_slider_ratings,
       instructions_train_sliders_procedure,

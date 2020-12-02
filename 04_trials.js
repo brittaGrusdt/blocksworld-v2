@@ -1,42 +1,5 @@
 // In this file you can specify the trial data for your experiment
-var color_vision_test = [
-  {
-    QUD: "Please click on the button with the correct answer.",
-    question: "Is the <b>BLUE</b> block on the <b>upper</b> picture?",
-    picture: "stimuli/img/color_vision_green_blue.png",
-    option1: "yes",
-    option2: "no",
-    expected: "no",
-    id: 'color-vision-green-blue'
-  },
-  {
-    QUD: "Please click on the button with the correct answer.",
-    question: "Is the <b>GREEN</b> block on the <b>upper</b> picture?",
-    picture: "stimuli/img/color_vision_blue_green.png",
-    option1: "yes",
-    option2: "no",
-    expected: "no",
-    id: 'color-vision-blue-green'
-  },
-  {
-    QUD: "Please click on the button with the correct answer.",
-    question: "Is the <b>BLUE</b> block on the <b>lower</b> picture?",
-    picture: "stimuli/img/color_vision_green_blue.png",
-    option1: "yes",
-    option2: "no",
-    expected: "yes",
-    id: 'color-vision-green-blue'
-  },
-  {
-    QUD: "Please click on the button with the correct answer.",
-    question: "Is the <b>GREEN</b> block on the <b>lower</b> picture?",
-    picture: "stimuli/img/color_vision_blue_green.png",
-    option1: "yes",
-    option2: "no",
-    expected: "yes",
-    id: 'color-vision-blue-green'
-  }
-]
+
 // color vision with dropdown choice
 const color_vision_trials = [
     {
@@ -84,21 +47,6 @@ const color_vision_trials = [
         expected: 'blue',
         id: 'blue'
     },
-    // {
-    //     picture: "stimuli/img/color_vision_red.png",
-    //     QUD: "What's the color of the block on the picture?",
-    //     question_left_part: "The block is ",
-    //     question_right_part: ".",
-    //     option1: 'black',
-    //     option2: 'blue',
-    //     option3: 'green',
-    //     option4: 'grey',
-    //     option5: 'purple',
-    //     option6: 'red',
-    //     option7: 'yellow',
-    //     expected: 'red',
-    //     id: 'red'
-    // },
     {
         picture: "stimuli/img/color_vision_green.png",
         QUD: "What's the color of the block on the picture?",
@@ -114,21 +62,6 @@ const color_vision_trials = [
         expected: 'green',
         id: 'green'
     },
-    // {
-    //     picture: "stimuli/img/color_vision_yellow.png",
-    //     QUD: "What's the color of the block on the picture?",
-    //     question_left_part: "The block is ",
-    //     question_right_part: ".",
-    //     option1: 'black',
-    //     option2: 'blue',
-    //     option3: 'green',
-    //     option4: 'grey',
-    //     option5: 'purple',
-    //     option6: 'red',
-    //     option7: 'yellow',
-    //     expected: 'yellow',
-    //     id: 'yellow'
-    // },
     {
         picture: "stimuli/img/color_vision_red_yellow.png",
         QUD: "What's the color of the <b>upper</b> block on the picture?",
@@ -160,6 +93,45 @@ const color_vision_trials = [
         id: 'yellow-red'
     }
 ];
+
+const attention_check_trials = [
+  {
+    picture: 'stimuli/img/icons/not-red-yellow.png',
+    QUD: "What event does this icon represent?",
+    question_left_part: "The icon represents the event that ",
+    question_right_part: ".",
+    option1: 'the red block falls, but not the yellow',
+    option2: 'the yellow block falls, but not the red',
+    option3: 'none of the two blocks falls',
+    option4: 'both blocks fall',
+    expected: 'the yellow block falls, but not the red',
+    id: 'not-red-yellow'
+  },
+  {
+    picture: 'stimuli/img/icons/red-not-yellow.png',
+    QUD: "What event does this icon represent?",
+    question_left_part: "The icon represents the event that ",
+    question_right_part: ".",
+    option1: 'the red block falls, but not the yellow',
+    option2: 'both blocks fall',
+    option3: 'the yellow block falls, but not the red',
+    option4: 'none of the two blocks falls',
+    expected: 'the red block falls, but not the yellow',
+    id: 'not-yellow-red'
+  },
+  {
+    picture: 'stimuli/img/icons/red-yellow.png',
+    QUD: "What event does this icon represent?",
+    question_left_part: "The icon represents the event that ",
+    question_right_part: ".",
+    option1: 'none of the two blocks falls',
+    option2: 'the red block falls, but not the yellow',
+    option3: 'the yellow block falls, but not the red',
+    option4: 'both blocks fall',
+    expected: 'both blocks fall',
+    id: 'red-yellow'
+  }
+]
 
 // ----- TEST TRIALS PROBABILITIES (ex.1)---- //
 let test_ids = [];
@@ -370,11 +342,10 @@ let slider_choice_trials = _.map(_.range(slider_choice_ids.length), function (i)
   }
   return trial
 });
-
 // add trials with wrong statements
 let qs_no = [];
 let ids_no = [];
-for(idx in [0, 3, 4]){
+for(idx in [0, 1, 3]){
   let i = indices[idx]
   let i_wrong = i==0 ? 1 : 0
   let id = other_ids[idx][i_wrong]
@@ -383,17 +354,18 @@ for(idx in [0, 3, 4]){
   let q = other_questions[idx][i].replace("thinks that", "is very confident that");
   qs_no.push(q + "</b>") // but same question
 }
-
-slider_choice_trials = _.shuffle(slider_choice_trials.concat(
-  _.map(_.range(0, ids_no.length), function(i){
-    return {
-      QUD: "Please click on the button with the correct answer.",
-      question: qs_no[i],
-      picture: "stimuli/img/slider-choices/" + ids_no[i] + ".png",
-      option1: "yes",
-      option2: "no",
-      expected: "no",
-      id: 'slider_choice_no' + i
-    }
-  })
-));
+let choice_expected_no = _.map(_.range(0, ids_no.length), function(i){
+  return {
+    QUD: "Please click on the button with the correct answer.",
+    question: qs_no[i],
+    picture: "stimuli/img/slider-choices/" + ids_no[i] + ".png",
+    option1: "yes",
+    option2: "no",
+    expected: "no",
+    id: 'slider_choice_no' + i
+  }
+});
+slider_choice_trials = _.shuffle(slider_choice_trials);
+slider_choice_trials.splice(1, 0, choice_expected_no[0]);
+slider_choice_trials.splice(5, 0, choice_expected_no[1]);
+slider_choice_trials.splice(8, 0, choice_expected_no[2]);

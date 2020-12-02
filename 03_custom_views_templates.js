@@ -334,12 +334,38 @@ const fridge_generator = {
 };
 
 const dropdown_choice_generator = {
+  answer_container_gen_attention: function (config, CT) {
+    const question_left_part = config.data[CT].question_left_part === undefined ? "" : config.data[CT].question_left_part;
+    const question_right_part = config.data[CT].question_right_part === undefined ? "" : config.data[CT].question_right_part;
+    return `<div class='magpie-view-answer-container magpie-response-dropdown'>
+               ${question_left_part}
+               <select id='response' name='answer'>
+                   <option disabled selected></option>
+                   <option value=${config.data[CT].option1}>${config.data[CT].option1}</option>
+                   <option value=${config.data[CT].option2}>${config.data[CT].option2}</option>
+                   <option value=${config.data[CT].option3}>${config.data[CT].option3}</option>
+                   <option value=${config.data[CT].option4}>${config.data[CT].option4}</option>
+               </select>
+               ${question_right_part}
+               </p>
+               <button id='next' class='magpie-view-button magpie-nodisplay'>Next</button>
+           </div>`;
+  },
   stimulus_container_gen: function (config, CT) {
     return `<div class='magpie-view'>
     <h1 class='magpie-view-title'>${config.title}</h1>
     <p class='magpie-view-question magpie-view-qud'>${config.data[CT].QUD}</p>
     <div class='magpie-view-stimulus-container'>
       <img src="${config.data[CT].picture}" class = "img"/>
+    </div>
+  </div>`;
+  },
+  stimulus_container_gen_attention: function (config, CT) {
+    return `<div class='magpie-view'>
+    <h1 class='magpie-view-title'>${config.title}</h1>
+    <p class='magpie-view-question magpie-view-qud'>${config.data[CT].QUD}</p>
+    <div class='magpie-view-stimulus-container'>
+      <img src="${config.data[CT].picture}" class ="img_wide"/>
     </div>
   </div>`;
   },

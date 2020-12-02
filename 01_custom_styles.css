@@ -272,6 +272,14 @@ input[type=range].correct-slider::-moz-range-track {
   margin-right: auto;
 }
 
+.img_wide{
+  height: 70%;
+  width: 50%;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .instruction_img{
   width: 75%;
   height: 100%;

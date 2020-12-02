@@ -96,7 +96,7 @@ _htmlSlider = function (idxSlider, utterance, options, value) {
   let html_slider = start +
     `<span class='magpie-response-slider-option optionWide thick'>` + options.left + `</span>
      <input type='range' id=` + responseID + ` name=` + answerID +
-    ` class='magpie-response-slider slider-width' min='0' max='100' step='1' value='` + value +
+    ` class='magpie-response-slider slider-width' min='0' max='100' step='5' value='` + value +
     `' oninput="_updateSliderOutput(this.id, this.value)"'` +
     `' onclick="_updateSliderOutput(this.id, this.value)"'` + `>` +
     // `' oninput='` + outputID + `.value=` + responseID + `.value'>` +

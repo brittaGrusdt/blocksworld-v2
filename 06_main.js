@@ -44,7 +44,7 @@ $("document")
         // As well as "MTurk", "MTurkSandbox" and "Prolific"
         deployMethod: "Prolific",
         contact_email: "britta.grusdt@uni-osnabrueck.de",
-        prolificURL: "https://app.prolific.co/submissions/complete?cc=577DD4C6"
+        prolificURL: "https://app.prolific.co/submissions/complete?cc=5570B716"
       },
       // Here, you can specify how the progress bar should look like
       progress_bar: {

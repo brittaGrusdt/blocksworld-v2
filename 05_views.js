@@ -420,7 +420,7 @@ const thanks = magpieViews.view_generator("thanks", {
 const slider_choice_training = magpieViews.view_generator('sentence_choice', {
   trials: slider_choice_trials.length,
   name: "slider_choice_training",
-  data: _.shuffle(slider_choice_trials)
+  data: slider_choice_trials
 }, {
   handle_response_function: function(config, CT, magpie, answer_container_generator, startingTime) {
     $(".magpie-view").append(answer_container_generator(config, CT));

@@ -174,7 +174,8 @@ const instructions_train_slider_ratings = magpieViews.view_generator("instructio
   belief about how likely each possible outcome is, click on <b>RUN</b> to start
   the animation and see what happens.
   <br/>
-  When the animation stops, you will get <b>feedback</b> about what actually happened.
+  <b>After a few seconds</b>, when the animation stops, you will get <b>feedback</b>
+  about what actually happened.
   Afterwards, click on <b>NEXT SCENE</b> to proceed with the next trial.
   <br/>
   <br/>

@@ -317,7 +317,7 @@ let other_questions = [
    part1 + `thinks that yellow falls but probably not red.`
   ],
   [part1 + `thinks that red falls and tends to think that yellow falls as well.`,
-  part1 + `thinks that yellow falls and is tends to think that red falls as well.`]
+  part1 + `thinks that yellow falls and tends to think that red falls as well.`]
 ];
 
 let indices = _.map(_.range(0, 5), function(i){

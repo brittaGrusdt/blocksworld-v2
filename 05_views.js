@@ -387,8 +387,8 @@ const instructions_fridge_reminder = magpieViews.view_generator("instructions", 
   <b>behave as in the training trials</b>.
   <br/><br/>
   <b>3</b>. In task 2, please describe the scene <b>as adequately as possible</b>
-  with the given words &mdash; namely to a critical friend who expects you to say
-  only what you are confident about.
+  with the given words &mdash; namely to a <b>critical friend</b> who <b>expects
+  you to say only what you are confident about</b>.
   <br/>
   <br/>
   <b>A final note</b>:

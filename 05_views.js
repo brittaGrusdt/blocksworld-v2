@@ -71,7 +71,7 @@ const instructions_general = magpieViews.view_generator("instructions", {
          <br />
          <br />
          The experiment consists of two phases, a <b>training</b> and a <b>testing</b> phase.
-         In total, you will need about <b>20-25 minutes</b> to finish it.
+         In total, you will need about <b>25-30 minutes</b> to finish it.
          <br/>
          <br/>
          <b>Please note</b>:
@@ -187,13 +187,18 @@ const instructions_train_sliders_procedure = magpieViews.view_generator("instruc
   trials: 1,
   name: "instructions_train_sliders_procedure",
   title: "Slider Ratings",
-  text: `
+  text: `Remember the sliders you just saw in the training phase:
+  <br/><br/>
+  <img src="stimuli/img/slider.png" class="instruction_img"><br/><br/>
   <b>1</b>. Each slider indicates the <b>plausibility</b> that a given event will happen.
-  Eventually, we want them to indicate the <b>percent chance</b> that a given event will happen, therefore all possible outcomes will have to sum to 100. You don't have to worry about this: after you have moved all four sliders, <b>your ratings will be readjusted automatically</b> in order to sum up to 100 &mdash; but they will <b>conserve their relative position to each other</b>.
+  Eventually, we want them to indicate the <b>percent chance</b> that the given event will happen, therefore all possible outcomes will have to sum to 100. You don't have to worry about this: after you have moved all four sliders, <b>your ratings will be readjusted automatically</b> in order to sum up to 100 &mdash; but they will <b>conserve their relative position to each other</b>.
   <br/>
   <br/>
   <b>2</b>. If you are not happy with the automatically readjusted values, <b>please correct them such that they represent your genuine beliefs</b>.
-  To make it easier for you, you will additionally see two piecharts next to the sliders that indicate the derived probability that you assigned in total to the event that the two colored blocks fall respectively.
+  To make it easier for you, you will additionally see two visualizations next to the sliders (piecharts to be precise) that indicate the derived probability that you assigned in total to the event that the two colored blocks fall respectively. In the following example  picture, the left piechart for instance indicates a quite large belief of the blue block to fall (in the experiment, hover over piechart to see the exact values) and a still larger belief of the green block to fall.
+  <br/>
+  <br/>
+  <img src="stimuli/img/piecharts.png" class="instruction_img_small"><br/>
   <br/>
   <br/>
   <b>3</b>. Note that changing the position of a slider <b>after they were automatically readjusted to sum up to 100</b>, will have an effect on <b>ALL</b> other sliders as well. This is something you should get used to during this training phase.
@@ -249,10 +254,14 @@ const instructions_fridge = magpieViews.view_generator("instructions", {
   name: "instructions_fridge",
   title: "Instructions Test Phase",
   text: `Great &mdash; we will now proceed with the test phase. Each trial now
-  consists of two tasks. Task 1 is the same as in the training phase (but
-  without feedback). In task 2 we ask you to <b>produce the
-  sentence</b> that <b>best describes</b> which blocks you think will fall
-  in the shown picture of block arrangements.
+  consists of two tasks. Task 1 is the same as in the second part of the training
+  phase (but without feedback). In task 2 we ask you to
+  <b>describe to a critical friend</b> what you think <b>most likely happens
+  with the two colored blocks</b> in the shown picture of block arrangements.
+  As your friend is critical, <b>you don't want to say what you are not sufficiently
+  convinced of</b> &mdash; your friend relies on you to get the <b>best description</b>
+  of what <b>you truly believ</b>e that happens with the blocks in the shown picture.
+  <br/>
   <br/>
   You can select words by clicking on them &mdash; the resulting sentence will be
   shown in the box in the lower left corner.
@@ -279,7 +288,7 @@ const instructions_fridge = magpieViews.view_generator("instructions", {
   the lower right of the screen.
   </br>
   When you are done, you can directly click on <b>SUBMIT SENTENCE</b> to proceed or
-  if you think that none of the provided sentences is adequate, you can also first
+  if you think that none of the provided sentences is adequate enough, you can also first
   freely enter a sentence by clicking on <b>USE MY OWN WORDS</b> and then submit.
   </br>
   Then as usual, proceed with the next trial by clicking on <b>NEXT SCENE</b>.`,

@@ -272,6 +272,15 @@ input[type=range].correct-slider::-moz-range-track {
   margin-right: auto;
 }
 
+.instruction_img{
+  width: 75%;
+  height: 100%;
+}
+.instruction_img_small{
+  width: 75%;
+  height: 60%;
+}
+
 .div-border {
   display: inline-block;
 }

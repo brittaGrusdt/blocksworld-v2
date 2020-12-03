@@ -100,11 +100,11 @@ const attention_check_trials = [
     QUD: "What event does this icon represent?",
     question_left_part: "The icon represents the event that ",
     question_right_part: ".",
-    option1: 'the red block falls, but not the yellow',
-    option2: 'the yellow block falls, but not the red',
-    option3: 'none of the two blocks falls',
-    option4: 'both blocks fall',
-    expected: 'the yellow block falls, but not the red',
+    option1: "rny",
+    option2: "ynr",
+    option3: "none",
+    option4: "both",
+    expected: "ynr",
     id: 'not-red-yellow'
   },
   {
@@ -112,11 +112,11 @@ const attention_check_trials = [
     QUD: "What event does this icon represent?",
     question_left_part: "The icon represents the event that ",
     question_right_part: ".",
-    option1: 'the red block falls, but not the yellow',
-    option2: 'both blocks fall',
-    option3: 'the yellow block falls, but not the red',
-    option4: 'none of the two blocks falls',
-    expected: 'the red block falls, but not the yellow',
+    option1: "rny",
+    option2: 'both',
+    option3: "ynr",
+    option4: 'none',
+    expected: 'rny',
     id: 'not-yellow-red'
   },
   {
@@ -124,11 +124,11 @@ const attention_check_trials = [
     QUD: "What event does this icon represent?",
     question_left_part: "The icon represents the event that ",
     question_right_part: ".",
-    option1: 'none of the two blocks falls',
-    option2: 'the red block falls, but not the yellow',
-    option3: 'the yellow block falls, but not the red',
-    option4: 'both blocks fall',
-    expected: 'both blocks fall',
+    option1: 'none',
+    option2: 'rny',
+    option3: 'ynr',
+    option4: 'both',
+    expected: 'both',
     id: 'red-yellow'
   }
 ]

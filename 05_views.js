@@ -526,12 +526,12 @@ const instruction_slider_example = magpieViews.view_generator(
 
 const attention_check_view = magpieViews.view_generator('dropdown_choice', {
     trials: 3,
-    name: "attention_check" + idx,
+    name: "attention_check",
     data: attention_check_trials
   }, {
     stimulus_container_generator: dropdown_choice_generator.stimulus_container_gen_attention,
     answer_container_generator: dropdown_choice_generator.answer_container_gen_attention,
-    handle_response_function: dropdown_choice_generator.handle_response_function
+    handle_response_function: dropdown_choice_generator.handle_response_function_attention
   });
 
 fridge_view = function(idx){

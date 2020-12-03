@@ -337,19 +337,20 @@ const dropdown_choice_generator = {
   answer_container_gen_attention: function (config, CT) {
     const question_left_part = config.data[CT].question_left_part === undefined ? "" : config.data[CT].question_left_part;
     const question_right_part = config.data[CT].question_right_part === undefined ? "" : config.data[CT].question_right_part;
-    return `<div class='magpie-view-answer-container magpie-response-dropdown'>
-               ${question_left_part}
-               <select id='response' name='answer'>
-                   <option disabled selected></option>
-                   <option value=${config.data[CT].option1}>${config.data[CT].option1}</option>
-                   <option value=${config.data[CT].option2}>${config.data[CT].option2}</option>
-                   <option value=${config.data[CT].option3}>${config.data[CT].option3}</option>
-                   <option value=${config.data[CT].option4}>${config.data[CT].option4}</option>
-               </select>
-               ${question_right_part}
-               </p>
-               <button id='next' class='magpie-view-button magpie-nodisplay'>Next</button>
-           </div>`;
+    return `
+    <div class='magpie-view-answer-container magpie-response-dropdown'>
+      ${question_left_part}
+      <select id='response' name='answer'>
+         <option disabled selected></option>
+         <option value=${config.data[CT].option1}>${EVENT_MAP[config.data[CT].option1]}</option>
+         <option value=${config.data[CT].option2}>${EVENT_MAP[config.data[CT].option2]}</option>
+         <option value=${config.data[CT].option3}>${EVENT_MAP[config.data[CT].option3]}</option>
+         <option value=${config.data[CT].option4}>${EVENT_MAP[config.data[CT].option4]}</option>
+      </select>
+      ${question_right_part}
+      </p>
+      <button id='next' class='magpie-view-button magpie-nodisplay'>Next</button>
+   </div>`;
   },
   stimulus_container_gen: function (config, CT) {
     return `<div class='magpie-view'>
@@ -417,7 +418,36 @@ handle_response_function: function(config, CT, magpie, answer_container_generato
       magpie.trial_data.push(trial_data);
       magpie.findNextView();
   });
-}};
+},
+handle_response_function_attention: function(config, CT, magpie, answer_container_generator, startingTime){
+  const question_left_part =
+      config.data[CT].question_left_part === undefined ? "" : config.data[CT].question_left_part;
+  const question_right_part =
+      config.data[CT].question_right_part === undefined ? "" : config.data[CT].question_right_part;
+
+  $(".magpie-view").append(answer_container_generator(config, CT));
+  let response = $("#response");
+  response.on("change", function() {
+      $("#next").removeClass("magpie-nodisplay");
+  });
+  $("#next").on("click", function() {
+      const RT = Date.now() - startingTime; // measure RT before anything else
+      CountTrials.color_vision = CountTrials.color_vision + 1;
+      let trial_data = {
+          trial_name: config.name,
+          trial_number: CT + 1,
+          question: question_left_part.concat("...answer here...").concat(question_right_part),
+          response: response.val(),
+          RT: RT
+      };
+
+      trial_data = magpieUtils.view.save_config_trial_data(config.data[CT], trial_data);
+      magpie.trial_data.push(trial_data);
+      magpie.findNextView();
+  });
+}
+
+};
 
 // const custom_posttest_generator = {
 //   answer_container_gen: function (config, CT) {

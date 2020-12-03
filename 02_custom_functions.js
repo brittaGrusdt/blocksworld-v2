@@ -62,6 +62,11 @@ const TRAIN_BTTN_IDS = [BLOCK_COLS_SHORT.train.join('')].concat(
 const VAL_START_SLIDERS = 25
 
 //globally initialize
+const EVENT_MAP = {"rny": "the red block falls, but not the yellow",
+                  "ynr": "the yellow block falls, but not the red",
+                  "none": "none of the two blocks falls",
+                  "both": "both blocks fall"}
+
 total_moves = VAL_START_SLIDERS === 0 ? 0 : 4;
 
 // custom functions:

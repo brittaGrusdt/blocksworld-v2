@@ -138,6 +138,15 @@ tidy_data <- function(data, N_trials, experiment){
       select(prolific_id, id, question, response, expected, QUD, trial_number)
     df <- df %>% filter(!startsWith(trial_name, "color-vision"));
   }
+  dat.slider_choice=tibble()
+  dat.attention_check=tibble()
+  if(N_trials$slider_choice != 0){
+    cols = c("prolific_id", "id", "question", "response", "expected", "trial_name", "trial_number")
+    dat.slider_choice = df %>% filter(startsWith(trial_name, "slider_choice_training")) %>%
+      select(one_of(cols))
+    dat.attention_check = df %>% filter(startsWith(trial_name, "attention_check")) %>%
+      select(one_of(cols)) %>% filter(response != expected)
+  }
   N_participants <- df %>% select(prolific_id) %>% unique() %>% nrow()
   stopifnot(nrow(df) == N_participants * (N_trials$test + N_trials$train));
 
@@ -160,9 +169,10 @@ tidy_data <- function(data, N_trials, experiment){
     stop(paste(experiment, 'unknown'))
   }
   dat.pretest <- tidy_pretest(df)
-
   dat.all <- list(test=dat.test, train.norm=dat.train$norm,
                   train.orig=dat.train$orig, color=dat.color_vision,
+                  train.attention=dat.attention_check,
+                  train.slider_choice=dat.slider_choice,
                   info=dat.info, comments=dat.comments, pretest=dat.pretest)
 
   return(dat.all)

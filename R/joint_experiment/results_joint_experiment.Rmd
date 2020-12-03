@@ -84,12 +84,6 @@ Look at mean probability ratings dependent on the utterance expected in
 respective production trial. 
 
 ```{r, plot-functions, echo=FALSE}
-expected.conjunction = c("if1_hh", "if1_lh", "if2_hl", "if2_ll",
-                          "independent_hh", "independent_ll", "independent_hl",
-                          "ind2");
-expected.literal = c("independent_uh", "independent_ul");
-expected.conditional = c("if1_uh", "if1_u-Lh", "if2_ul", "if2_u-Ll");
-
 prob_means = data.prior.norm %>% filter(!is.na(question)) %>% 
   select(-RT, -utterance) %>% 
   group_by(id, question) %>% 
@@ -196,6 +190,18 @@ df = left_join(data.prior.norm %>% select(-question, -RT) %>% rename(human_exp1=
 
 df %>% filter(human_exp1 >= 0.7) %>% nrow() / nrow(df)   
 
+df.not_col = df %>% filter(!prolific_id %in% pids.false_colors)
+(df.not_col  %>%  filter(human_exp1 >= 0.7) %>%  nrow()) / nrow(df.not_col)
+p <- df.not_col %>%
+    ggplot(aes(y=utterance, x=human_exp1)) +
+    geom_point(aes(color=id)) +
+    geom_vline(aes(xintercept=0.7), color="black", linetype='dashed') +
+    facet_wrap(~prolific_id) +
+    theme_bw(base_size = 14) +
+    theme(legend.position="bottom") +
+    labs(x="rated probability (prior elicitation)", y="response")
+p
+
 # Plot for those participants who had at least one color-vision question wrong.
 df.col = df %>% filter(prolific_id %in% pids.false_colors)
 p <- df.col %>%
@@ -207,6 +213,7 @@ p <- df.col %>%
     theme(legend.position="bottom") +
     labs(x="rated probability (prior elicitation)", y="response")
 p
+
 ```
 
 Quality of the data measured by the squared mean diff of a participant's prior rating to the 

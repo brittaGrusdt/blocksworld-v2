@@ -13,7 +13,8 @@ source(here("R", "utils-exp1.R"))
 source(here("R", "utils-exp2.R"))
 
 # General Data ------------------------------------------------------------
-exp.name = "wor(l)ds-of-toy-blocks"
+# exp.name = "wor(l)ds-of-toy-blocks"
+exp.name = "toy-blocks-pilot-2"
 
 IDS.dep=c("if1_uh", "if1_u-Lh", "if1_hh", "if1_lh",
           "if2_ul", "if2_u-Ll", "if2_hl", "if2_ll");
@@ -105,7 +106,8 @@ epsilon = 0.00001
 SEP = .Platform$file.sep
 
 # Experimental Data -------------------------------------------------------
-data <- readRDS(paste(RESULT.dir, "wor(l)ds-of-toy-blocks_tidy.rds", sep=SEP));
+data <- readRDS(paste(RESULT.dir, SEP, exp.name, "_tidy.rds", sep=""));
+data.info = data$info
 data.comments = data$comments
 data.color = data$color 
 
@@ -126,6 +128,7 @@ TABLES.dep = readRDS(paste(RESULT.dir, "empiric-dep-tables-smooth.rds", sep=SEP)
 TABLES.all = bind_rows(TABLES.ind, TABLES.dep)
 
 data.train.norm = data$train.norm
+data.train.orig = data$train.orig
 # for each participant only the last 50% of all train trials
 data.train.norm.half = data.train.norm %>% 
   separate(id, into=c("trial.relation", "trial.idx"), sep=-1, remove=FALSE) %>%

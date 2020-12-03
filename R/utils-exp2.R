@@ -1,3 +1,10 @@
+expected.conjunction = c("if1_hh", "if1_lh", "if2_hl", "if2_ll",
+                         "independent_hh", "independent_ll", "independent_hl",
+                         "ind2");
+expected.literal = c("independent_uh", "independent_ul");
+expected.conditional = c("if1_uh", "if1_u-Lh", "if2_ul", "if2_u-Ll");
+expected.both = c("if1_hh", "if2_hl", "independent_hh")
+expected.none = c("if1_lh", "if2_ll", "independent_ll")
 
 summarize_utts = function(df, w_pos, w_neg, utt){
   for(w in w_pos) {

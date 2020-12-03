@@ -128,6 +128,11 @@ df.train.ramp %>%
   plot_ratings_across_conditions("training trials ramp with ball")
 ```
 
+
+
+
+
+
 ## Training data: ratings per stimulus, block on edge (low/uncertain/high prior)
 
 ```{r, fig.width=12}
@@ -253,7 +258,6 @@ p3
 Here, condition high is rated as too low. -> More training?!
 and condition low is rated as too high.
 
-
 ## Relations understood?
 
 A,C independent:
@@ -320,6 +324,8 @@ p <- data.distances %>%
     theme_bw(base_size=20) +
     theme(legend.position="top", axis.text.x=element_text(angle=90))
 p
+ggsave(paste(PLOT.dir, "distances-all.png", sep=.Platform$file.sep), p, width=15, height=10)
+
 ```
 
 Most variations in quality in 
@@ -339,6 +345,7 @@ Same plot only with data from df.understood_rel from above.
 ```{r, sum-sq-diff-mean, fig.height=15}
 df.quality = left_join(df.understood_rel, data.distances %>% rename(prolific_id=comparator),
                        by=c("prolific_id", "id"))
+nrow(df.quality) / nrow(data.distances)
 
 # make plots (save as png)
 pd <- position_dodge(0.5) 
@@ -350,14 +357,6 @@ p <- df.quality %>%
     theme_bw(base_size=20) +
     theme(legend.position="top", axis.text.x=element_text(angle=90))
 p
-ggsave(paste(PLOT.dir, "quality-check.png", sep=.Platform$file.sep), p, width=15, height=10)
+ggsave(paste(PLOT.dir, "distances-relation-understood.png", sep=.Platform$file.sep), p, width=15, height=10)
 ```
-
-
-
-## How to improve training?
-
-## Criteria for preregistration
-
-
 

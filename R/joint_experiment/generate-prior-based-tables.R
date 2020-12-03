@@ -1,5 +1,6 @@
+library(here)
 source(here("R", "joint_experiment", "analysis-utils.R"))
-
+source(here("R", "joint_experiment", "fit-priors.R"))
 # CREATE TABLES FOR MODEL PREDICTIONS -------------------------------------
 sample_probs_independent = function(n, par, sd=0.01){
   pa = rbeta(n, par$p_a1, par$p_a2)
@@ -200,7 +201,8 @@ plot_tables <- function(tables.model, tables.empirical){
 }
 
 # target_dir = "../MA-project/conditionals/data";
-# tables.nested = create_tables(target_dir, 3000)
+target_dir = here("data", "prolific", "results", exp.name)
+tables.nested = create_tables(target_dir, 3000)
 # tables = formatGeneratedTables4Webppl(tables.nested)
 
 

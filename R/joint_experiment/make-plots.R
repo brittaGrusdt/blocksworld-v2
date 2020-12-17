@@ -1,28 +1,5 @@
 source("R/joint_experiment/analysis-utils.R")
 
-df.wide = TABLES.dep %>% 
-  # filter(prolific_id %in% pids.false_colors) %>%
-  group_by(prolific_id, id) %>%
-  rename(bg=AC, b=`A-C`, g=`-AC`, none=`-A-C`) %>%
-  select(bg, b, g, none, prolific_id, id) %>%
-  rowid_to_column()
-df.long = df.wide %>% 
-  pivot_longer(cols=c(bg, b, g, none), names_to="question", values_to="response") 
-save_to = paste(PLOT.dir, "slider-ratings-densities", sep=SEP)
-if(!dir.exists(save_to)) {dir.create(save_to)}
-df.long %>%
-  plotSliderDensities(questions.test, labels.test, target_dir=save_to)
-
-save_to = paste(PLOT.dir, "slider-ratings-boxplots", sep=SEP)
-if(!dir.exists(save_to)) {dir.create(save_to)}
-df.long %>% plotSliderRatings(questions.test, labels.test, cluster_by="bg",
-                              relation=FALSE, target_dir=save_to)
-
-
-# Slider Ratings ----------------------------------------------------------
-# 1.unnormalized slider ratings with utterance and normalized ratings
-save_to = paste(PLOT.dir, "slider-ratings-tables", sep=SEP)
-if(!dir.exists(save_to)) {dir.create(save_to)}
 pids = data.joint.orig %>% pull(prolific_id) %>% unique()
 stimuli =  data.prior.orig %>% pull(id) %>% unique()
 
@@ -44,6 +21,31 @@ getData =function(normalized=TRUE){
 }
 df.norm = getData()
 df.orig = getData(normalized=FALSE)
+
+
+# summary slider-ratings ----------------------------------------------------
+df.wide = TABLES.dep %>% 
+  # filter(prolific_id %in% pids.false_colors) %>%
+  group_by(prolific_id, id) %>%
+  rename(bg=AC, b=`A-C`, g=`-AC`, none=`-A-C`) %>%
+  select(bg, b, g, none, prolific_id, id) %>%
+  rowid_to_column()
+df.long = df.wide %>% 
+  pivot_longer(cols=c(bg, b, g, none), names_to="question", values_to="response") 
+save_to = paste(PLOT.dir, "slider-ratings-densities", sep=SEP)
+if(!dir.exists(save_to)) {dir.create(save_to)}
+df.long %>%
+  plotSliderDensities(questions.test, labels.test, target_dir=save_to)
+
+save_to = paste(PLOT.dir, "slider-ratings-boxplots", sep=SEP)
+if(!dir.exists(save_to)) {dir.create(save_to)}
+df.long %>% plotSliderRatings(questions.test, labels.test, cluster_by="bg",
+                              relation=FALSE, target_dir=save_to)
+
+# Slider Ratings ----------------------------------------------------------
+# 1.unnormalized slider ratings with utterance and normalized ratings
+save_to = paste(PLOT.dir, "slider-ratings-tables", sep=SEP)
+if(!dir.exists(save_to)) {dir.create(save_to)}
 
 for(pid in pids) {
   df.pid.orig = df.orig %>% filter(prolific_id == (!! pid))
@@ -73,18 +75,6 @@ for(pid in pids) {
     }
   }
 }
-
-# 2.normalized ratings with produced utterance
-fn = paste(PLOT.dir, "by-participants-normalized-ratings-with-production", sep=SEP)
-if(!dir.exists(fn)){dir.create(fn)}
-plotSliderRatingsAndUtts(data.joint, fn)
-
-  # 3.unnormalized ratings with produced utterance
-fn = paste(PLOT.dir, "by-participants-transformed-ratings-with-production", sep=SEP)
-if(!dir.exists(fn)){dir.create(fn)}
-plotSliderRatingsAndUtts(data.joint.transformed, fn)
-
-
 # Literal meaning probabilities -------------------------------------------
 df = left_join(data.prior.norm %>% select(-question, -RT) %>% rename(human_exp1=response),
                data.production %>% select(-RT) %>% rename(utterance=response),
@@ -114,6 +104,31 @@ p <- df %>%
 ggsave(paste(PLOT.dir, "prior-vs-utt-per-proband.png", sep=SEP), p, width=15, height=18)
 
 
+ratios_large = df %>% group_by(prolific_id) %>%
+  summarize(n=n(), ratio_large=sum(human_exp1 >= 0.7)/n) %>%
+  arrange(desc(ratio_large))
+ids.large = ratios_large %>% filter(ratio_large>=0.7) %>% pull(prolific_id)
+ids.small = ratios_large %>% filter(ratio_large<0.7) %>% pull(prolific_id)
+
+# Slider Ratings
+# 2.normalized ratings with produced utterance
+fn = paste(PLOT.dir, "by-participants-normalized-ratings-with-production",
+           "large_beliefs", sep=SEP)
+if(!dir.exists(fn)){dir.create(fn, recursive = TRUE)}
+plotSliderRatingsAndUtts(data.joint %>% filter(prolific_id %in% ids.large), fn)
+
+fn = paste(PLOT.dir, "by-participants-normalized-ratings-with-production",
+           "small_beliefs", sep=SEP)
+if(!dir.exists(fn)){dir.create(fn, recursive = TRUE)}
+plotSliderRatingsAndUtts(data.joint %>% filter(prolific_id %in% ids.small), fn)
+
+# 3.unnormalized ratings with produced utterance
+# fn = paste(PLOT.dir, "by-participants-transformed-ratings-with-production", sep=SEP)
+# if(!dir.exists(fn)){dir.create(fn)}
+# plotSliderRatingsAndUtts(data.joint.transformed, fn)
+
+
+
 # Data Quality ------------------------------------------------------------
 p = data.quality  %>%
   ggplot(aes(x=stimulus_id,  y=sum_sq_diff)) +
@@ -125,7 +140,6 @@ ggsave(paste(PLOT.dir, "quality-sum-sq-diff-to-mean.png", sep=SEP), p, width=15,
 
 
 # Train data --------------------------------------------------------------
-
 plotTrainUncertain = function(fn) {
   df=data.train.norm %>% 
     mutate(question=case_when(question=="bg" ~ "ry",
@@ -182,4 +196,86 @@ plotTrainUncertain = function(fn) {
 
 plotTrainUncertain("edge")
 plotTrainUncertain("ramp")
+
+
+# Model-vs-human ----------------------------------------------------------
+save_to = paste(PLOT.dir, "comparison-exp1-exp2-model", sep=SEP)
+if(!dir.exists(save_to)) {dir.create(save_to)}
+
+df = data.human_model %>% ungroup() %>% filter(!is.na(cn)) %>%
+  dplyr::select(prolific_id, id, cn) %>% unique() %>%
+  group_by(prolific_id, id) %>%
+  rowid_to_column("rowid")
+
+for(i in seq(1, nrow(df))) {
+  pid = df[i,]$prolific_id
+  stimulus = df[i,]$id
+  df.row = data.human_model %>% filter(prolific_id == (!! pid) & id == (!! stimulus))
+  df.row.long = df.row %>% group_by(utterance) %>% 
+    pivot_longer(cols=c("model.p", "human_exp1"), names_to="predictor", values_to="p")
+  target_folder = paste(save_to, pid, sep=SEP) 
+  if(!dir.exists(target_folder)) dir.create(target_folder);
+  
+  p = df.row.long %>% ggplot() + 
+    geom_bar(aes(y=utterance, x=p, fill=predictor), stat="identity", position="dodge") +
+    geom_point(data=df.row %>% filter(human_exp2==1), aes(x=1, y=utterance), size=4, color='orange') +
+    theme_classic(base_size=20) +
+    theme(legend.position="top")
+  ggsave(paste(save_to, SEP, pid, SEP, stimulus, ".png", sep=""), p, height=12, width=10)
+}
+
+
+
+# Model -------------------------------------------------------------------
+path.results_model <- here("model", "data", "results-prior.rds")
+model.tables = readRDS(paste(RESULT.dir, "model-tables-stimuli.rds", sep=SEP)) %>%
+  dplyr::select(table_id, stimulus, empirical, vs, ps) %>% unnest(c(vs,ps)) %>%
+  rename(id=stimulus)
+model.tables.wide = model.tables %>% pivot_wider(names_from="vs", values_from="ps")
+
+analyze_tables("", 0.8, model.tables)
+
+model.prior <- readRDS(path.results_model) %>% ungroup() %>% dplyr::select(-cn)
+model.prior.wide = model.prior %>% group_by(bn.id) %>%
+  pivot_wider(names_from="cell", values_from="val")
+
+# summary model tables
+df.wide = model.tables %>% pivot_wider(names_from="vs", values_from="ps") %>% 
+  group_by(table_id, id) %>%
+  rename(bg=AC, b=`A-C`, g=`-AC`, none=`-A-C`) %>%
+  dplyr::select(bg, b, g, none, table_id, id) %>%
+  rowid_to_column()
+df.long = df.wide %>% 
+  pivot_longer(cols=c(bg, b, g, none), names_to="question", values_to="response") 
+save_to = here("model", "R", "figs")
+if(!dir.exists(save_to)) {dir.create(save_to)}
+df.long %>%
+  plotSliderDensities(questions.test, labels.test, target_dir=save_to, jitter=FALSE)
+
+
+
+
+# analyze tables
+df.prior = model.prior.wide %>% rename(table_id = bn.id) %>%
+  dplyr::select(-bn_id, -level, -bias, -starts_with("p_"), -`AC`, -`A-C`, -`-AC`, -`-A-C`)
+
+df = left_join(df.prior, model.tables.wide, by=c("table_id")) %>%
+  rename(bg=AC, b=`A-C`, g=`-AC`, none=`-A-C`) %>% add_probs() %>%
+  dplyr::select(!starts_with("p_likely"))
+
+# bns where A is true
+df.certain_both = df %>% filter((p_a >=0.8 | p_a <0.2) & (p_c >=0.8 | p_c <0.2))
+df.certain_both %>% group_by(bn.stimulus) %>% summarize(sum_p = sum(prob)) %>%
+  arrange(desc(sum_p))
+
+
+# model tables
+# p = "/home/britta/UNI/Osnabrueck/MA-project/conditionals/data/tables-10000-(in)dependent.rds"
+p = "/home/britta/UNI/Osnabrueck/prob-modeling-conditionals/data/default-model/tables-default.rds"
+tables.theoretic = readRDS(p) %>% dplyr::select(-starts_with("logL"), -seed) %>%
+  group_by(id)
+
+analyze_tables("", 0.9, tables.theoretic %>% unnest(c(vs,ps)))
+
+
 

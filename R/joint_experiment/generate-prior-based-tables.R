@@ -1,6 +1,6 @@
 library(here)
 source(here("R", "joint_experiment", "analysis-utils.R"))
-source(here("R", "joint_experiment", "fit-priors.R"))
+# source(here("R", "joint_experiment", "fit-priors.R"))
 # CREATE TABLES FOR MODEL PREDICTIONS -------------------------------------
 sample_probs_independent = function(n, par, sd=0.01){
   pa = rbeta(n, par$p_a1, par$p_a2)
@@ -22,7 +22,7 @@ create_independent_tables <- function(params, n=1000, sd=0.01){
       mutate(`A-C`=p_a-AC, `-AC`=p_c-AC,
               s=AC+`A-C`+`-AC`, `-A-C`= case_when(s >= 1 ~ 0,
                                                  TRUE ~ 1-s));
-    tables.mat = tables %>% select(-s, -p_a, -p_c)
+    tables.mat = tables %>% dplyr::select(-s, -p_a, -p_c)
     df.tables = prop.table(tables.mat %>% as.matrix() + epsilon, 1) %>%
       as_tibble() %>% rowid_to_column("id")
     tables_long <- df.tables %>% group_by(id) %>%
@@ -54,7 +54,7 @@ create_dependent_tables <- function(params, n, generate_by="p"){
       mutate(AC = p_pos * p_marg, `A-C` = (1-p_pos) * p_marg,
              `-AC` = p_neg * (1-p_marg), `-A-C` = (1-p_neg) * (1-p_marg));
     
-    tables.mat = tables %>% select(-p_pos, -p_neg, -p_marg)
+    tables.mat = tables %>% dplyr::select(-p_pos, -p_neg, -p_marg)
     df.tables = prop.table(tables.mat %>% as.matrix() + epsilon, 1) %>%
       as_tibble() %>% rowid_to_column("id")
     tables_long <- df.tables %>%
@@ -63,7 +63,7 @@ create_dependent_tables <- function(params, n, generate_by="p"){
     tables_long %>% group_by(id) %>%
       summarise(ps = list(val), vs=list(cell), .groups = 'drop') %>%
       add_column(cn=(!! row$cn), stimulus = (!! row$id)) %>%
-      select(-id) %>% rename(stimulus_id=stimulus) 
+      dplyr::select(-id) %>% rename(stimulus_id=stimulus) 
   });
   return(tables.all)
 }
@@ -90,12 +90,12 @@ create_tables = function(target_dir, n=2500){
     ll = tables %>% log_likelihood(cn, par)
     ll %>% mutate(ll.key= (!!id))
   })
-  tables.ll = tables.ll %>% select(-starts_with("p_"), -lb, -ub) %>%
+  tables.ll = tables.ll %>% dplyr::select(-starts_with("p_"), -lb, -ub) %>%
     filter(!is.na(AC) && !is.na(`A-C`) && !is.na(`-AC`) && !is.na(`-A-C`)) %>%
     group_by(id, ll.key) %>% 
     mutate(vs=list(c("AC", "A-C", "-AC", "-A-C")),
            ps=list(c(`AC`, `A-C`, `-AC`, `-A-C`))) %>%
-    select(-`AC`, -`A-C`, -`-AC`, -`-A-C`)
+    dplyr::select(-`AC`, -`A-C`, -`-AC`, -`-A-C`)
   return(tables.ll)
 }
 
@@ -105,10 +105,10 @@ formatGeneratedTables4Webppl = function(generated_tables) {
     unnest(c(vs,ps)) %>% group_by(bn_id) %>%
     mutate(ps=round(ps, 2)) %>% 
     pivot_wider(names_from="vs", values_from="ps") %>%
-    ungroup() %>% select(-bn_id)
+    ungroup() %>% dplyr::select(-bn_id)
   
   tables.ind.empirical = TABLES.ind %>%
-    select(id, prolific_id, AC, `A-C`, `-AC`, `-A-C`) %>%
+    dplyr::select(id, prolific_id, AC, `A-C`, `-AC`, `-A-C`) %>%
     mutate(AC=round(AC, 2),
            `A-C`=round(`A-C`, 2),
            `-AC`=round(`-AC`, 2),
@@ -118,10 +118,10 @@ formatGeneratedTables4Webppl = function(generated_tables) {
     unnest(c(vs,ps)) %>% group_by(bn_id) %>%
     mutate(ps=round(ps, 2)) %>% 
     pivot_wider(names_from="vs", values_from="ps") %>%
-    ungroup() %>% select(-bn_id)
+    ungroup() %>% dplyr::select(-bn_id)
   
   tables.dep.empirical = TABLES.dep %>%
-    select(id, prolific_id, AC, `A-C`, `-AC`, `-A-C`) %>%
+    dplyr::select(id, prolific_id, AC, `A-C`, `-AC`, `-A-C`) %>%
     mutate(AC=round(AC, 2),
            `A-C`=round(`A-C`, 2),
            `-AC`=round(`-AC`, 2),
@@ -134,7 +134,7 @@ formatGeneratedTables4Webppl = function(generated_tables) {
     distinct_at(vars(c(AC, `A-C`, `-AC`, `-A-C`, stimulus_id, ll.key)), .keep_all = TRUE) %>% 
     rename(table_id=id) %>% unite("bn_id", c(stimulus_id, table_id), sep="--") %>%
     group_by(bn_id)
-  df = tables.model %>% select(-ll, -ll.key,-cn) %>% distinct() %>% 
+  df = tables.model %>% dplyr::select(-ll, -ll.key,-cn) %>% distinct() %>% 
     left_join(tables.empirical, by=c("AC", "A-C", "-AC", "-A-C"))
   model = left_join(tables.model, df) %>%
     mutate(empirical=ifelse(is.na(trial_id), FALSE, TRUE))
@@ -168,13 +168,13 @@ formatGeneratedTables4Webppl = function(generated_tables) {
     pivot_wider(names_from=ll.key, values_from=ll) %>% 
     mutate(vs=list(c("AC", "A-C", "-AC", "-A-C")),
            ps=list(c(`AC`, `A-C`, `-AC`, `-A-C`))) %>%
-    select(-AC, -`A-C`, -`-AC`, -`-A-C`) %>%
+    dplyr::select(-AC, -`A-C`, -`-AC`, -`-A-C`) %>%
     rename(stimulus_id=bn_id)
   save_to = paste(target_dir, "model-tables-stimuli.rds", sep=SEP)
   saveRDS(tables.toWPPL, save_to);
   print(paste('saved generated tables to:', save_to))
   
-  mapping = tables.toWPPL %>% select(stimulus_id, trial_id, empirical) %>%
+  mapping = tables.toWPPL %>% dplyr::select(stimulus_id, trial_id, empirical) %>%
     unnest(c(trial_id)) %>% filter(!is.na(trial_id)) %>% distinct()
   save_to = paste(target_dir, "mapping-tableID-prolificID.rds", sep=SEP)
   saveRDS(mapping, save_to);
@@ -202,12 +202,30 @@ plot_tables <- function(tables.model, tables.empirical){
 
 # target_dir = "../MA-project/conditionals/data";
 target_dir = here("data", "prolific", "results", exp.name)
-tables.nested = create_tables(target_dir, 3000)
+tables.nested = create_tables(target_dir, 10)
 # tables = formatGeneratedTables4Webppl(tables.nested)
 
 
 # stimulus = "independent_hl"
 # plot_tables(tables.model %>% filter(id==stimulus),
 #             tables.empirical %>% filter(id==stimulus))
+
+tables = TABLES.all %>%
+  dplyr::select(AC, `A-C`, `-AC`, `-A-C`, p_c_given_a, p_c_given_na,
+                prolific_id, id) %>%
+  mutate(diff=abs(p_c_given_a - p_c_given_na),
+         id=as.character(id),
+         cn=case_when(startsWith(id, "independent") ~ "independent",
+                      TRUE ~ "dependent"),
+         id=as.factor(id)) 
+
+p = tables %>% ggplot(aes(x=diff, color=cn)) +
+  geom_density() +
+  theme_classic(base_size = 20) +
+  labs(x="|P(C|A) - P(C|¬A)|") +
+  theme(legend.position="top")
+
+ggsave(paste(PLOT.dir, "diff-tables.png", sep=SEP), p, width=10, height=12)
+
 
 

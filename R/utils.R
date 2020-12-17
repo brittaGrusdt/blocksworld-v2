@@ -30,7 +30,7 @@ save_raw_data <- function(data_dir, data_fn, result_dir, result_fn, debug_run=FA
 
 tidy_test_exp1 <- function(df){
   dat.test <- df %>% filter(str_detect(trial_name, "multiple_slider")) %>%
-    select(trial_name, trial_number,
+    dplyr::select(trial_name, trial_number,
            prolific_id, RT, QUD, id, group,
            question1, question2, question3, question4,
            response1, response2, response3, response4) %>%
@@ -41,7 +41,7 @@ tidy_test_exp1 <- function(df){
                  names_to = "question_idx", names_prefix = "question",
                  values_to = "question") %>%
     filter(response_idx == question_idx) %>%
-    select(-response_idx, -question_idx)
+    dplyr::select(-response_idx, -question_idx)
 
   dat.test <- dat.test %>%
     mutate(response = as.numeric(response),
@@ -56,7 +56,7 @@ tidy_test_exp1 <- function(df){
 
 tidy_test_exp2 <- function(df){
   dat.test <- df %>% filter(startsWith(trial_name, "fridge_view") | trial_name == "fridge_train") %>%
-    select(prolific_id, RT, QUD, id, group, response1, response2, trial_name,
+    dplyr::select(prolific_id, RT, QUD, id, group, response1, response2, trial_name,
            trial_number) %>%
     rename(custom_response=response2, response=response1)
   
@@ -81,7 +81,7 @@ tidy_test_joint <- function(df){
 tidy_train <- function(df){
   dat.train <- df %>%
     filter(startsWith(trial_name, "animation") | trial_name == "multiple_slider_train") %>%
-    select(prolific_id, RT, expected, QUD, id, trial_name,
+    dplyr::select(prolific_id, RT, expected, QUD, id, trial_name,
            trial_number,
            question1, question2, question3, question4,
            response1, response2, response3, response4
@@ -93,22 +93,22 @@ tidy_train <- function(df){
                  names_to = "question_idx", names_prefix = "question",
                  values_to = "question") %>%
     filter(response_idx == question_idx) %>%
-    select(-response_idx, -question_idx) %>%
+    dplyr::select(-response_idx, -question_idx) %>%
     mutate(prolific_id = factor(prolific_id), id = factor(id)) %>%
     group_by(prolific_id, id) %>%
     mutate(response = as.numeric(response), response = response/100)%>%
     add_normed_exp1("train")
   
   dat.train.norm = dat.train %>% rename(response=r_norm) %>%
-    select(-r_orig, -n, -trial_name)
+    dplyr::select(-r_orig, -n, -trial_name)
   dat.train.orig = dat.train %>% rename(response=r_orig) %>%
-    select(-r_norm, -n, -trial_name)
+    dplyr::select(-r_norm, -n, -trial_name)
   return(list(norm=dat.train.norm, orig=dat.train.orig))
 }
 
 tidy_pretest <- function(df){
   dat.pre <- df %>% filter(trial_name == "pretest") %>%
-    select(prolific_id, question, response, id, trial_name, trial_number) %>%
+    dplyr::select(prolific_id, question, response, id, trial_name, trial_number) %>%
     mutate(prolific_id = factor(prolific_id), id=factor(id),
            response = as.numeric(response),
            trial_number = as.character(trial_number))
@@ -117,8 +117,8 @@ tidy_pretest <- function(df){
 
 ## @arg experiment: "prior", "production", "joint" ##
 tidy_data <- function(data, N_trials, experiment){
-  # 1. Select only columns relevant for data analysis
-  df <- data %>% select(prolific_id, submission_id,
+  # 1. dplyr::select only columns relevant for data analysis
+  df <- data %>% dplyr::select(prolific_id, submission_id,
                         question, question1, question2, question3, question4,
                         QUD, response,
                         expected, response1, response2, response3, response4,
@@ -135,7 +135,7 @@ tidy_data <- function(data, N_trials, experiment){
   if(N_trials$color_vision != 0) {
     dat.color_vision <- df %>%
       filter(startsWith(trial_name, "color-vision")) %>%
-      select(prolific_id, id, question, response, expected, QUD, trial_number)
+      dplyr::select(prolific_id, id, question, response, expected, QUD, trial_number)
     df <- df %>% filter(!startsWith(trial_name, "color-vision"));
   }
   dat.slider_choice=tibble()
@@ -143,19 +143,19 @@ tidy_data <- function(data, N_trials, experiment){
   if(N_trials$slider_choice != 0){
     cols = c("prolific_id", "id", "question", "response", "expected", "trial_name", "trial_number")
     dat.slider_choice = df %>% filter(startsWith(trial_name, "slider_choice_training")) %>%
-      select(one_of(cols))
+      dplyr::select(one_of(cols))
     dat.attention_check = df %>% filter(startsWith(trial_name, "attention_check")) %>%
-      select(one_of(cols)) %>% filter(response != expected)
+      dplyr::select(one_of(cols)) %>% filter(response != expected)
   }
-  N_participants <- df %>% select(prolific_id) %>% unique() %>% nrow()
+  N_participants <- df %>% dplyr::select(prolific_id) %>% unique() %>% nrow()
   stopifnot(nrow(df) == N_participants * (N_trials$test + N_trials$train));
 
   dat.comments <- df %>%
-    select(prolific_id, comments) %>%
+    dplyr::select(prolific_id, comments) %>%
     mutate(comments = as.character(comments),
            comments = if_else(is.na(comments), "", comments)) %>%
     unique()
-  dat.info <- df %>% select(prolific_id, education, gender, age, timeSpent) %>%
+  dat.info <- df %>% dplyr::select(prolific_id, education, gender, age, timeSpent) %>%
     unique()
   dat.train <- tidy_train(df)
   
@@ -223,7 +223,6 @@ standardize_color_groups_exp2 <- function(df){
   return(df)
 }
 
-
 # @arg df: data frame containing columns bg, b, g
 add_probs <- function(df){
   df <- df %>% mutate(p_a=bg+b, p_c=bg+g, p_na=g+none, p_nc=b+none) %>%
@@ -246,7 +245,7 @@ add_probs <- function(df){
 # @arg quest: question which is used to generate the clusters, e.g. 'b'
 cluster_responses <- function(dat, quest){
   dat.kmeans <- dat %>% filter(question == quest) %>%
-    select(prolific_id, id, response) %>% add_column(y=1) %>%
+    dplyr::select(prolific_id, id, response) %>% add_column(y=1) %>%
     group_by(prolific_id, id) %>%
     unite("rowid", "prolific_id", "id", sep="--") %>%
     column_to_rownames(var = "rowid")
@@ -258,7 +257,7 @@ cluster_responses <- function(dat, quest){
     separate(col="rowid", sep="--", into=c("prolific_id", "id")) %>%
     mutate(cluster=as.factor(clusters$cluster), id=as.factor(id),
            prolific_id = as.factor(prolific_id)) %>%
-    select(prolific_id, id, cluster)
+    dplyr::select(prolific_id, id, cluster)
   df <- left_join(dat, df) 
   df <- df %>% mutate(cluster = fct_explicit_na(df$cluster, na_level = 'not-clustered'))
   return(df)
@@ -284,7 +283,7 @@ add_normed_exp1 <- function(df1, test_or_train, epsilon=0.000001){
   message(paste("#datapoints filtered out as all 4 events rated as 0:", zeros))
   # normalize such that slider responses sum up to 1 but also keep original response
   df.with_normed = df %>%
-    mutate(n=sum(response), r_norm=response/n) %>%
+    mutate(n=sum(response + epsilon), r_norm=(response + epsilon)/n) %>%
     rename(r_orig=response)
   print(paste("in", test_or_train, "data"))
   return(df.with_normed)
@@ -300,7 +299,7 @@ save_prob_tables <- function(df, result_dir, result_fn){
   print(paste('written means of normalized probability tables to:', path_table_means))
   
   # All Tables (with normalized values)
-  tables.all <- df %>% select(id, question, prolific_id, r_norm) %>%
+  tables.all <- df %>% dplyr::select(id, question, prolific_id, r_norm) %>%
     group_by(id, question, prolific_id) %>%
     pivot_wider(names_from = question, values_from = r_norm)
   fn_tables_all <- paste(result_fn, "_tables_all.csv", sep="");
@@ -312,7 +311,7 @@ save_prob_tables <- function(df, result_dir, result_fn){
   epsilon = 0.00001
   tables.orig <- tables.all %>% rename(AC=bg, `A-C`=b, `-AC`=g, `-A-C`=none)
   tables.mat = tables.orig %>% ungroup() %>%
-    select(AC, `A-C`, `-AC`, `-A-C`) %>% as.matrix()
+    dplyr::select(AC, `A-C`, `-AC`, `-A-C`) %>% as.matrix()
   tables.smooth = prop.table(tables.mat + epsilon, 1)
   tables.smooth = cbind(tables.smooth, rowid=seq.int(from=1, to=nrow(tables.mat), by=1)) %>%
     as_tibble() %>% 
@@ -327,9 +326,9 @@ save_prob_tables <- function(df, result_dir, result_fn){
            theta_cna = ((1-p_a_given_c) - (1-p_a_given_nc)) / (1 - (1-p_a_given_nc)),
     );
   TABLES = left_join(tables.smooth,
-    tables.orig %>% select(id, prolific_id) %>% rowid_to_column(var="rowid"),
+    tables.orig %>% dplyr::select(id, prolific_id) %>% rowid_to_column(var="rowid"),
     by="rowid"
-  ) %>% select(-rowid)
+  ) %>% dplyr::select(-rowid)
 
   TABLES.long = TABLES %>% rowid_to_column() %>%
     mutate(ind_diff=AC-(p_a*p_c)) %>%
@@ -370,7 +369,7 @@ process_data <- function(data_dir, data_fn, result_dir, result_fn, debug_run,
     save_prob_tables(df1, result_dir, result_fn);
     df2 <- data %>% filter(str_detect(trial_name, "fridge_")) %>%
       mutate(response=utterance) %>%
-      select(-utterance)
+      dplyr::select(-utterance)
     df2 <- standardize_color_groups_exp2(df2)
     df2 <- standardize_sentences(df2)
     df <- bind_rows(df1 %>% rename(response=utterance), df2);
@@ -406,6 +405,6 @@ process_data <- function(data_dir, data_fn, result_dir, result_fn, debug_run,
 #     mutate(max=max(ry, r, y, none), min=min(ry, r, y, none), max_diff=max-min) %>%
 #     filter(!(id == "uncertain0" & max_diff > max_diff_equal)) %>%
 #     ungroup() %>% 
-#     select(-min, -max, -max_diff)
+#     dplyr::select(-min, -max, -max_diff)
 #   return(df.filtered)     
 # }

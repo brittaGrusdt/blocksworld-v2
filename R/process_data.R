@@ -51,7 +51,7 @@ if(!dir.exists(filtered_dir)){
 # entry (considering all participants) summed for each participant across all
 # 4 questions/joint events
 test.prior = data$test %>% filter(str_detect(trial_name, "multiple_slider"))
-prior.quality = test.prior   %>%  select(-response, -custom_response) %>% 
+prior.quality = test.prior %>%  dplyr::select(-response, -custom_response) %>% 
   responsesSquaredDiff2Mean() %>%
   mutate(stimulus_id=factor(stimulus_id))
 saveRDS(object=prior.quality,
@@ -60,12 +60,12 @@ saveRDS(object=prior.quality,
 # 2. merge data from prior elicitation and production
 getPriorElicitation = function(test.prior, normalized=TRUE){
   df.prior_responses = test.prior %>%
-    select(-custom_response, -QUD, -trial_number, -trial_name) 
+    dplyr::select(-custom_response, -QUD, -trial_number, -trial_name) 
   if(normalized){
-    df.prior_responses = df.prior_responses %>% select(-r_orig) %>% 
+    df.prior_responses = df.prior_responses %>% dplyr::select(-r_orig) %>% 
       pivot_wider(names_from = "question", values_from = "r_norm")
   } else {
-    df.prior_responses = df.prior_responses %>% select(-r_norm) %>%
+    df.prior_responses = df.prior_responses %>% dplyr::select(-r_norm) %>%
       pivot_wider(names_from = "question", values_from = "r_orig")
   }
   df.prior_responses = df.prior_responses %>% add_probs()
@@ -97,28 +97,28 @@ getPriorElicitation = function(test.prior, normalized=TRUE){
                        TRUE ~ NA_character_)
     )
   
-  exp1.human = prior_responses %>% select(-group, -n) %>%
+  exp1.human = prior_responses %>% dplyr::select(-group, -n) %>%
     rename(human_exp1=val, question=prob) %>% 
     mutate(question = case_when(!question %in% c("bg", "b", "g", "none") ~ NA_character_,
                                 TRUE ~ question))
   return(exp1.human)
 }
-exp1.human.orig = getPriorElicitation(test.prior, normalized = FALSE) %>% select(-response)
-exp1.human.norm = getPriorElicitation(test.prior, normalized = TRUE) %>% select(-response)
+exp1.human.orig = getPriorElicitation(test.prior, normalized = FALSE) %>% dplyr::select(-response)
+exp1.human.norm = getPriorElicitation(test.prior, normalized = TRUE) %>% dplyr::select(-response)
 
 test.production = data$test %>%
   filter(str_detect(trial_name, "fridge_")) %>%
   standardize_sentences();
 exp2.human = test.production %>%
-  select(prolific_id, id, response, RT, custom_response) %>%
+  dplyr::select(prolific_id, id, response, RT, custom_response) %>%
   rename(utterance=response) %>% add_column(human_exp2=1)
-joint.human = left_join(exp1.human.norm %>% select(-question, -RT),
-                        exp2.human %>% select(-RT, -custom_response),
+joint.human = left_join(exp1.human.norm %>% dplyr::select(-question, -RT),
+                        exp2.human %>% dplyr::select(-RT, -custom_response),
                         by=c("prolific_id", "id", "utterance"))
 
 joint.human.orig = left_join(
-  exp1.human.orig %>% select(-question, -RT),
-  exp2.human %>% select(-RT, -custom_response),
+  exp1.human.orig %>% dplyr::select(-question, -RT),
+  exp2.human %>% dplyr::select(-RT, -custom_response),
   by=c("prolific_id", "id", "utterance"))
 saveRDS(joint.human.orig, paste(result_dir, "human-orig-exp1-exp2.rds", sep=.Platform$file.sep))
 
@@ -132,7 +132,7 @@ saveRDS(exp1.human.norm %>% rename(response=human_exp1),
 saveRDS(joint.human, paste(result_dir, "human-exp1-exp2.rds", sep=.Platform$file.sep))
 
 
-df = exp1.human.norm %>% rename(r_norm=human_exp1) %>% select(-utterance) %>% 
+df = exp1.human.norm %>% rename(r_norm=human_exp1) %>% dplyr::select(-utterance) %>% 
   filter(!is.na(question))
 distances = distancesResponses(df)
 saveRDS(object=distances,
@@ -155,7 +155,7 @@ filter_data = function(target_dir, exp.name, by_quality=FALSE,
       # mutate(quantiles=list(quantile(sum_sq_diff))) %>%
       mutate(iqr=IQR(sum_sq_diff), mean=mean(sum_sq_diff),
              outlier=sum_sq_diff < (mean-2*iqr) | (sum_sq_diff>mean + 2*iqr)) %>%
-      filter(!outlier) %>% select(prolific_id, stimulus_id)
+      filter(!outlier) %>% dplyr::select(prolific_id, stimulus_id)
     
     df = bind_rows(df, right_join(tables, dat.quality %>% rename(id=stimulus_id)))
   }
@@ -164,7 +164,7 @@ filter_data = function(target_dir, exp.name, by_quality=FALSE,
     dat.color = data$color %>%
       mutate(correct = expected == response,  N=max(trial_number)) %>%
       filter(correct) %>% group_by(prolific_id) %>%
-      mutate(n=n()) %>% filter(n == N) %>% select(prolific_id) %>% unique() %>%
+      mutate(n=n()) %>% filter(n == N) %>% dplyr::select(prolific_id) %>% unique() %>%
       add_column(id=list(stimuli)) %>%
       unnest(c(id))
 
@@ -174,7 +174,7 @@ filter_data = function(target_dir, exp.name, by_quality=FALSE,
   }
   
   if(!is.na(out.by_comments)){
-      df = anti_join(df, out.by_comments)
+    df = anti_join(df, out.by_comments)
   }
   save_to = paste(target_dir, "filtered_data",
                   "empiric-filtered-tables-smooth.rds", sep=.Platform$file.sep)

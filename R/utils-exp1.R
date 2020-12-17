@@ -8,11 +8,11 @@ plotSliderRatings <- function(data, questions, labels, cluster_by="g", relation=
   df <- cluster_responses(dat, cluster_by);
   if(relation) {
     df.stats = df %>% group_by(question, id, understood_rel) %>%
-      select(question, id, response, understood_rel) %>%
+      dplyr::select(question, id, response, understood_rel) %>%
       summarize(mu=mean(response), med=median(response), .groups="keep");
   } else {
     df.stats = df %>% group_by(question, id) %>%
-      select(question, id, response) %>%
+      dplyr::select(question, id, response) %>%
       summarize(mu=mean(response), med=median(response), .groups="keep");
   }
   ids <- df$id %>% unique() %>% as.character()
@@ -56,12 +56,12 @@ plotSliderRatings <- function(data, questions, labels, cluster_by="g", relation=
   }
 }
 
-plotSliderDensities <- function(data, questions, labels, target_dir=NA){
+plotSliderDensities <- function(data, questions, labels, target_dir=NA, jitter=TRUE){
   dat <- data %>% ungroup() %>%
     mutate(question = factor(question, levels = (!!questions)),
            response=as.numeric(response))
   dat.stats = dat %>% group_by(question, id) %>%
-    select(question, id, response) %>%
+    dplyr::select(question, id, response) %>%
     summarize(mu=mean(response), med=median(response), .groups="keep");
   ids <- dat$id %>% unique() %>% as.character()
   for (id in ids){
@@ -70,9 +70,11 @@ plotSliderDensities <- function(data, questions, labels, target_dir=NA){
     p <- df %>% 
       ggplot(aes(x=response)) +
         geom_density(aes(fill=question), alpha=0.6) +
-        guides(fill=FALSE) + 
-      geom_jitter(aes(y=0), width=0, height = 0.1, alpha=0.5) + 
-      # geom_vline(aes(xintercept=med), color = "red", size=0.5) +
+        guides(fill=FALSE)
+    if(jitter){
+      p = p + geom_jitter(aes(y=0), width=0, height = 0.1, alpha=0.5)
+    }
+    p = p + # geom_vline(aes(xintercept=med), color = "red", size=0.5) +
       geom_vline(data=df.stats, aes(xintercept=mu), color = "red",
                  size=0.5, linetype='dashed') +
       labs(x="slider ratings", y="", title=id) +
@@ -128,7 +130,7 @@ plot_ratings_across_conditions = function(df, title){
 # and compute the average distance for this participant from all other participants.
 distancesResponses = function(df.prior, save_as=NA){
   df = df.prior %>% 
-    select(prolific_id, id, r_norm, question) %>%
+    dplyr::select(prolific_id, id, r_norm, question) %>%
     unite(col = "id_quest", "id", "question", remove=FALSE) %>%
     rename(response=r_norm)
   
@@ -140,7 +142,7 @@ distancesResponses = function(df.prior, save_as=NA){
       dat <- df %>% filter(id == (!! stimulus));
       res_proband = res %>%
         filter(str_detect(string = id_quest, pattern = paste(stimulus, ".*", sep=""))) %>%
-        select(id_quest, response) %>% rename(r_proband = response) %>%
+        dplyr::select(id_quest, response) %>% rename(r_proband = response) %>%
         add_column(comparator = proband)
       dat.others = anti_join(dat, res_proband %>% rename(prolific_id=comparator),
                              by=c("prolific_id", "id_quest")) %>%
@@ -155,7 +157,7 @@ distancesResponses = function(df.prior, save_as=NA){
   distances <- distances %>% filter(comparator != prolific_id) %>%
     group_by(comparator, id, question) %>% mutate(mean_diff=mean(diff))
   df <- distances %>%
-    select(comparator, question, mean_diff, id, mean.others) %>%
+    dplyr::select(comparator, question, mean_diff, id, mean.others) %>%
     ungroup() %>%
     mutate(question = factor(question, levels=c("bg", "b", "g", "none"))) %>%
     group_by(comparator, question, id) %>% distinct() %>% ungroup()
@@ -163,7 +165,7 @@ distancesResponses = function(df.prior, save_as=NA){
   # average diff for each proband (comparator) + id + question
   stats_all <- df %>% group_by(question, id) %>% 
     mutate(mu_mean_diff=mean(mean_diff), sd_mean_diff=sd(mean_diff)) %>%
-    select(-comparator, -mean_diff, -mean.others) %>% distinct() %>% ungroup()
+    dplyr::select(-comparator, -mean_diff, -mean.others) %>% distinct() %>% ungroup()
     # mutate(limit_up = mu + sd, limit_low = mu - sd)
   
   df <- left_join(df, stats_all, by=c("question", "id")) %>%
@@ -178,7 +180,7 @@ distancesResponses = function(df.prior, save_as=NA){
 # Quality of the data squared diff to mean
 responsesSquaredDiff2Mean = function(df.prior){
   df = df.prior %>% 
-    select(prolific_id, id, r_norm, question) %>%
+    dplyr::select(prolific_id, id, r_norm, question) %>%
     unite(col = "id_quest", "id", "question", sep="--") %>%
     rename(response=r_norm) %>% group_by(id_quest)
   mus = df %>% group_by(id_quest) %>%
@@ -230,14 +232,14 @@ log_likelihood = function(df, cn, par){
 }
 
 formatParams4WebPPL = function(params){
-  par=params %>% ungroup() %>% select(-cn) %>% group_by(id) %>% 
+  par=params %>% ungroup() %>% dplyr::select(-cn) %>% group_by(id) %>% 
     transmute(p_ind=list(c(a1=p_a1, a2=p_a2, c1=p_c1, c2=p_c2)),
               p_dep=list(c(pos1=pos1, pos2=pos2, neg1=neg1, neg2=neg2,
                            marg1=marg1, marg2=marg2))
              )
-  par.ind = par %>% filter(str_detect(id, "independent")) %>% select(-p_dep) %>%
+  par.ind = par %>% filter(str_detect(id, "independent")) %>% dplyr::select(-p_dep) %>%
     pivot_wider(names_from="id", values_from="p_ind", names_prefix="logL_")
-  par.dep = par %>% filter(!str_detect(id, "independent")) %>% select(-p_ind) %>%
+  par.dep = par %>% filter(!str_detect(id, "independent")) %>% dplyr::select(-p_ind) %>%
     pivot_wider(names_from="id", values_from="p_dep", names_prefix="logL_")
  formatted = bind_cols(par.ind, par.dep) 
  return(formatted)
@@ -255,7 +257,7 @@ understood_relations = function(data.prior.norm){
   threshold.ind = 0.07
   threshold = 0.15
   prior.relations = prior.exp.wide %>% group_by(relation, prolific_id) %>%
-    select(relation, id, prolific_id, condition, g, b, p_blue, p_green, bg, none,
+    dplyr::select(relation, id, prolific_id, condition, g, b, p_blue, p_green, bg, none,
            g_given_nb, g_given_b) %>%
     mutate(as_expected=case_when(
       relation=="independent" ~ abs(bg - p_blue * p_green) < threshold.ind,

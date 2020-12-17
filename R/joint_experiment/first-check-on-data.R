@@ -26,7 +26,13 @@ p  = df %>%
 ggsave(paste(PLOT.dir, "utterance-frequencies.png", sep=SEP),
        p, width=12, height=15)
 
+# color vision data
 
+pids.color <- data.color %>% group_by(prolific_id, id) %>%
+  filter(expected != response) %>%
+  pull(prolific_id)
+
+df %>% filter(prolific_id %in% pids.color)
 
 
 

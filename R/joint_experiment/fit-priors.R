@@ -1,17 +1,17 @@
-source("R/joint_experiment/analysis-utils.R")
+library(here)
+source(here("R", "joint_experiment", "analysis-utils.R"))
 
-target_dir_params= "../MA-project/conditionals/data"
+# target_dir_params= "../MA-project/conditionals/data"
+target_dir_params = here("data", "prolific", "results", exp.name)
 
 # Functions ---------------------------------------------------------------
-getTables = function(data_filtered=FALSE){
+getTables = function(exp.name, data_filtered=FALSE){
   if(data_filtered) {
     fn = "empiric-filtered-tables-smooth.rds"
-    tables = readRDS(here("data", "prolific", "results",
-                          "experiment-wor(l)ds-of-toy-blocks", fn))
+    tables = readRDS(here("data", "prolific", "results", exp.name, fn))
   } else {
     fn = "empiric-all-tables-smooth.rds"
-    tables = readRDS(here("data", "prolific", "results",
-                          "experiment-wor(l)ds-of-toy-blocks", fn))
+    tables = readRDS(here("data", "prolific", "results", exp.name, fn))
   }
   return(tables)
 }
@@ -40,9 +40,9 @@ cnToProbs = function(y.tables, cn){
 }
 
 # Fit P(C|A), P(C|-A), P(A) beta distributions ----------------------------
-BetaFits = function(fn_suffix, filtered_data=FALSE,
+BetaFits = function(fn_suffix, exp.name, filtered_data=FALSE,
                     target_dir_params= "../MA-project/conditionals/data") {
-  tables.all = getTables(filtered_data)
+  tables.all = getTables(exp.name, data_filtered=filtered_data)
   get_optimal_params = function(cn, id){
     if(cn == "A || C"){
       df.observations = tables.all %>% filter(id==(!!id)) %>%
@@ -120,8 +120,8 @@ BetaFits = function(fn_suffix, filtered_data=FALSE,
 }
 
 #log likelihood for entire sample of empirical probability tables for each stimulus
-save_params_best_ll = function(res.fits, fn_suffix, filtered_data=FALSE){
-  tables = getTables(filtered_data) %>% rename(stimulus_id=id) %>%
+save_params_best_ll = function(res.fits, fn_suffix, exp.name, filtered_data=FALSE){
+  tables = getTables(exp.name, data_filtered=filtered_data) %>% rename(stimulus_id=id) %>%
     group_by(stimulus_id)
   fits = bind_rows(res.fits,
                    res.fits %>%
@@ -177,15 +177,18 @@ save_params_best_ll = function(res.fits, fn_suffix, filtered_data=FALSE){
 # e.g. for cn=A->C: fit distributions for P(C|A), P(C|¬A) and P(A).
 # for cn: A->-C and C->-A, same parameters as for A->C but reversed as the complementary
 # probabilities are considered (e.g. P(¬C|A) instead of P(C|A)).
-# Compute log-likelihood for all possible cns. dont switch params , as for
+# Compute log-likelihood for all possible cns. dont switch params, as for
 # A->C / A->¬C respectively the "positive" probability shall come from the same 
 # best distribution, only that once this is P(C|¬A) and once P(C|A). If we switch
 # params we will get the exact same likelihood for both cns which is nonsense.
-res.fits = BetaFits("-all-cns")
-params.ll_all = save_params_best_ll(res.fits, "")
 
-# res.fits.filtered = BetaFits("-all-cns-filtered-tables", filtered_data = TRUE)
-# params.ll_filtered = save_params_best_ll(res.fits.filtered,"-filtered-data", filtered_data = TRUE)
+# res.fits = BetaFits("-all-cns", exp.name, target_dir_params = target_dir_params)
+# params.ll_all = save_params_best_ll(res.fits, "", exp.name)
 
+# res.fits.filtered = BetaFits("-all-cns-filtered-tables", exp.name, filtered_data = TRUE)
+# params.ll_filtered = save_params_best_ll(res.fits.filtered, "-filtered-data",
+                                           # exp.name, filtered_data = TRUE)
+
+  
 
 

@@ -235,7 +235,7 @@ plotSliderRatingsAndUtts <- function(dat, target_dir){
           utt.face = case_when(utterance == uttered$utterance ~ "bold",
                                 TRUE ~ "plain"),
           utterance=factor(utterance, levels=levels.utt)) 
-
+        model=df.model %>% filter(stimulus_id==stimulus & prolific_id == pid & stimulus_id==cn)
         p <- df.stim %>%
           ggplot() +
           geom_bar(aes(y=utterance, x=human_exp1), stat="identity") +
@@ -247,6 +247,11 @@ plotSliderRatingsAndUtts <- function(dat, target_dir){
                 axis.text.x=element_text(angle=45, vjust = 0.5),
                 axis.text.y=element_text(color=df.stim$utt.col, face=df.stim$utt.face)) +
           labs(x="rated probability", y="response", title = stimulus)
+        
+        if(nrow(model)!=0){
+          print()
+          p = p + geom_bar(data=model, aes(y=response, x=model.p), stat="identity", color='green')
+        }
       ggsave(paste(target, paste(stimulus, "-", pid, ".png", sep=""), sep=SEP),
              p ,width=8, height=9)
     }

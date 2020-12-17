@@ -1,0 +1,69 @@
+// var data = {
+//   "verbose": [true],
+//   "vars": ["A", "C"],
+//   "bias": ["none"]
+//   "tables": //add example here
+// }
+globalStore.thresholds = {t: 0.899, f: 0.0499, theta: data["theta"][0], theta_likely : 0.499}
+
+var verbose = data["verbose"][0]
+var variables = data["vars"]
+var BIAS = data["bias"][0]
+globalStore.bias = BIAS
+globalStore.params_ll = data["params_ll"]
+
+var tables_list = data["tables"]
+globalStore.Tables = map(function(obj){
+  return {"id": obj["table_id"], "Table": Categorical({"vs": obj["vs"], "ps": obj["ps"]}),
+          "stimulus": obj["stimulus"]}
+}, tables_list)
+
+if(verbose){
+  display("bias: " + BIAS)
+  display("theta: " + globalStore.thresholds.theta)
+  display("# tables: " + globalStore.Tables.length)
+  display("vars: " + variables)
+}
+
+var variables = reduce(function(token, acc){
+  acc.concat([[token, negate(token)]])
+}, [], variables)
+
+var powerset = get_var_powerset(variables, false)
+globalStore.cns = data["cns"]
+globalStore.dep_cns = _.without(data["cns"], "independent");
+
+if(verbose){
+  display('# cns: ' + globalStore.cns.length)
+}
+
+var utterances = make_utterances(powerset)
+if(verbose){
+  display("all utterances:")
+  map(display, utterances)
+  display('# all utterances: ' + utterances.length)
+}
+
+var all_states = state_prior(BIAS).support()
+if(verbose){
+  display('# states: ' + all_states.length)
+}
+
+var utts_to_remove = filter(function(u){
+  !any(function(s){meaning(u, s["bn"]["table"])}, all_states)
+}, utterances)
+
+if(verbose){
+  display('# utts without corresponding state: ' + utts_to_remove.length)
+  display("removed utterances:")
+  map(display, utts_to_remove)
+}
+
+var utterances = filter(function(u){utts_to_remove.indexOf(u) == -1}, utterances)
+if(verbose){
+  display("included utterances:")
+  map(display, utterances)
+  display('# included utterances: ' + utterances.length)
+}
+
+utterances

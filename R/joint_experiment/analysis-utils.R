@@ -134,50 +134,101 @@ data.train.norm.half = data.train.norm %>%
   separate(id, into=c("trial.relation", "trial.idx"), sep=-1, remove=FALSE) %>%
   group_by(prolific_id, trial.relation) %>% arrange(desc(trial_number)) %>%
   top_frac(0.5, trial_number) %>% 
-  select(-expected) %>% 
+  dplyr::select(-expected) %>% 
   pivot_wider(names_from=question, values_from=response) %>%
   ungroup() %>% 
-  select(-trial.relation, -trial.idx)
+  dplyr::select(-trial.relation, -trial.idx)
 
 
 # Model Prediction Data ---------------------------------------------------
-path.results_model <- here("..", "MA-project", "conditionals", "data",
-                           "predictions-tables-stimuli")
-data.model <- readRDS(paste(path.results_model, "results-tables-stimuli.rds", sep=SEP)) %>%
-  separate(stimulus_id, into=c("stimulus", "id"), sep="--") %>%
-  group_by(id) %>% 
-  select(stimulus, cn, id, AC, `A-C`, `-AC`, `-A-C`, utterance, probs)
+path.results_model <- here("model", "data", "results-speaker.rds")
+data.model <- readRDS(path.results_model) %>%
+  group_by(table_id, cn) %>%
+  dplyr::select(table_id, cn, stimulus, AC, `A-C`, `-AC`, `-A-C`, utterance, probs)
 
-best_utt = function(data.model, group="bg"){
-  df = data.model %>% mutate(m=max(probs)) %>%
-    filter(m==probs) %>% rename(response=utterance, model.p=probs) %>% 
-    select(-m)
-  return(translate_utterances(df, group) %>% rename(model=response))
+tables.empiric = readRDS(paste(RESULT.dir, "tables-empiric.rds", sep=SEP))
+pids = tables.empiric %>% ungroup() %>%
+  dplyr::select(-AC, -`A-C`, -`-AC`, -`-A-C`) %>%
+  unnest(c(p_id))
+
+mapping.ids = readRDS(paste(RESULT.dir, "mapping-tables-ids.rds", sep=SEP)) %>%
+  dplyr::select(-augmented_id) %>% group_by(empirical_id)
+ 
+# mapping.ids %>% group_by(empirical_id) %>% summarize(table_ids=list(table_id))
+
+# iterate through all empirical ids, and note all table_ids that are associated 
+# with that empirical id (as there are several since empirical tables were augmented)
+ids = mapping.ids %>% ungroup() %>% dplyr::select(table_id, empirical_id, stimulus) %>% unique()
+empirical_ids = ids %>% pull(empirical_id) %>% unique()
+table_map = mapping.ids %>% group_by(empirical_id) %>%
+  summarize(table_ids=list(table_id), .groups="drop_last")
+
+df = data.model %>% ungroup() %>% dplyr::select(table_id) %>% unique()
+mapping=map_dfr(empirical_ids, function(id){
+  current = table_map %>% filter(empirical_id == id)
+  if(nrow(current) != 0){
+    table_ids =  current %>% unnest(c(table_ids)) %>% pull(table_ids)
+    dat = df %>% mutate(empirical_id=case_when(table_id %in% table_ids ~ id)) %>%
+      filter(!is.na(empirical_id))
+  } else {
+    dat = tibble()
+  }
+  return(dat)
+});
+predictions = data.model %>% dplyr::select(-AC, -`A-C`, -`-AC`, -`-A-C`)
+ids = left_join(mapping, pids)
+res.model = left_join(predictions, ids) %>% filter(!is.na(empirical_id)) %>%
+  group_by(empirical_id)
+
+# average across table_ids that map to same empirical id to get one model prediction 
+# for each empirical id
+res.per_empirical.model = res.model %>%
+  group_by(stimulus, utterance, cn, empirical_id) %>%
+  summarize(probs=mean(probs), .groups="drop") %>%
+  group_by(empirical_id, stimulus, cn) %>% 
+  rename(response=utterance) %>%
+  translate_utterances() %>%
+  group_by(empirical_id, stimulus, cn)
+
+best_utt = function(model){
+  df = model %>% mutate(m=max(probs)) %>%
+    filter(m==probs) %>% dplyr::select(-m) %>% distinct()
+  return(df %>% rename(model=response))
 }
-data.model.best = best_utt(data.model)
+res.per_empirical.model.best = res.per_empirical.model %>% best_utt();
 
-model.avg = data.model %>% group_by(stimulus, utterance) %>% 
-  summarise(sd=sd(probs), ratio=mean(probs), .groups="drop_last")
-model.avg.best = best_utt(model.avg %>% rename(probs=ratio), group="bg")
-
-# translate utterances for avg  model data and all model data
-model.avg = model.avg %>% rename(response=utterance, id=stimulus) %>%
-  translate_utterances() %>% add_column(predictor="model")
-
-data.model = data.model %>%
-  rename(table_id=id, response=utterance, id=stimulus) %>%
-  translate_utterances() %>% group_by(table_id, cn)
-
-model.all = data.model %>% ungroup() %>% 
-  distinct_at(vars(c(`AC`, `A-C`, `-AC`, `-A-C`, cn)), .keep_all = TRUE) %>%
-  group_by(table_id, cn)
+# merge empirical data from task1 + task2 with model data, 
+# average model predictions across different table_ids for the same stimulus +
+# participant
+model = res.per_empirical.model %>%
+  rename(id=stimulus, utterance=response, model.p=probs)
   
-mapping_table_participant = readRDS(
-  here("..", "MA-project", "conditionals", "data",
-       "mapping-tableID-prolificID.rds")) %>%
-  select(-empirical) %>%
-  separate(stimulus_id, into=c("stimulus_src", "table_id"), sep="--")
-  # separate(trial_id, into=c("stimulus_id", "prolific_id"), sep= "--")
+emp_ids = ids %>% dplyr::select(empirical_id, p_id) %>% distinct() %>%
+  separate(p_id, into=c("prolific_id", "stimulus", "prior"), sep="_") %>%
+  unite("id", c(stimulus, prior), sep="_")
+data.human = left_join(data.joint, emp_ids, by=c("prolific_id", "id")) %>%
+  filter(!is.na(empirical_id))
+data.human_model = left_join(data.human, model, by=c("empirical_id", "id", "utterance")) %>% 
+  group_by(prolific_id, id, empirical_id)
+
+# model.avg = data.model %>% group_by(stimulus_id, cn, response) %>% 
+#   summarise(ratio=mean(model.p), sd=sd(model.p))
+# model.avg.best = best_utt(model.avg %>% rename(model.p=ratio), group="bg")
+
+# data.model = data.model %>%
+#   rename(table_id=id, response=utterance, id=stimulus) %>%
+#   translate_utterances() %>% group_by(table_id, cn)
+# 
+# model.all = data.model %>% ungroup() %>% 
+#   distinct_at(vars(c(`AC`, `A-C`, `-AC`, `-A-C`, cn)), .keep_all = TRUE) %>%
+#   group_by(table_id, cn)
+#   
+# mapping_table_participant = readRDS(
+#   here("..", "MA-project", "conditionals", "data",
+#        "mapping-tableID-prolificID.rds")) %>%
+#   dplyr::select(-empirical) %>%
+#   separate(stimulus_id, into=c("stimulus_src", "table_id"), sep="--")
+#   # separate(trial_id, into=c("stimulus_id", "prolific_id"), sep= "--")
 
 
 

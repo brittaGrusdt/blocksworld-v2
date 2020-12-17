@@ -4,7 +4,7 @@ library(here)
 source(here("model", "R", "helpers-webppl.R"))
 source(here("model", "R", "helper-functions.R"))
 source(here("model", "R", "helpers-values-of-interest.R"))
-source(here("R", "utils.R"))
+source(here("R", "utils-exp2.R"))
 
 params <- configure(c("speaker"))
 
@@ -52,6 +52,10 @@ if(params$level_max == "speaker") {
   speaker <- posterior %>% structure_speaker_data(params) %>% group_by(stimulus)
   speaker_avg <- speaker %>% average_speaker(params) %>% arrange(avg)
   speaker_avg
+  
+  res.behav_model = join_model_behavioral_data(
+    speaker, here("data", "prolific", "results", "toy-blocks-pilot-2")
+  );
 } else if(params$level_max %in% c("priorN")){
     data <- structure_bns(posterior, params)
 } else if(params$level_max == "log_likelihood"){

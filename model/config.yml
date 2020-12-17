@@ -1,5 +1,5 @@
 default:
-  #tables_path: "./data/prolific/results/toy-blocks-pilot-2/model-tables-stimuli.rds"
+  tables_empiric: "./data/prolific/results/toy-blocks-pilot-2/model-tables-stimuli.rds"
   tables_path: "./model/data/tables-default.rds"
   target_dir: "./model/data"
   params_ll: "./data/prolific/results/toy-blocks-pilot-2/results-dirichlet-fits.csv"

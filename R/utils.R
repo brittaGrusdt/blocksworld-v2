@@ -384,27 +384,3 @@ process_data <- function(data_dir, data_fn, result_dir, result_fn, debug_run,
   
   return(dat.tidy)
 }
-
-
-# analyze_train_data = function(dat, theta_large=0.5, max_diff_equal=0.2, theta_small=0.15){
-#   df.filtered = dat %>%
-#     filter(!(id == "distance0" & r+ry > y+ry )) %>% #P(red)>P(yellow)
-#     filter(!(id == "distance1" & r+ry < y+ry)) %>% #P(red)<P(yellow)
-#     filter(!(id == "ssw0" & y < theta_small)) %>% # yellow, ¬red
-#     filter(!(id == "ssw1" & r < theta_small)) %>% # red, ¬yellow
-#     filter(!(id == "uncertain1" & (ry + y < theta_small))) %>%
-#     filter(!(id == "uncertain2" & (none + y) > threshold)) %>%
-#     filter(!(id == "uncertain3" & ((ry + r > threshold) | (none + r > threshold)))) %>%
-#     filter(!(id == "ac0" & ((none + y > threshold) | y>threshold))) %>%
-#     filter(!(id == "ac1" & ((none + r > threshold) | r>threshold))) %>%
-#     filter(!(id == "ac2" & y > threshold)) %>%
-#     filter(!(id == "ac3" & r > threshold)) %>%
-#     filter(!(id == "ind0" & (ry + y > threshold))) %>%
-#     filter(!(id == "ind1" & (none + y > threshold))) %>%
-#     rowwise() %>%
-#     mutate(max=max(ry, r, y, none), min=min(ry, r, y, none), max_diff=max-min) %>%
-#     filter(!(id == "uncertain0" & max_diff > max_diff_equal)) %>%
-#     ungroup() %>% 
-#     dplyr::select(-min, -max, -max_diff)
-#   return(df.filtered)     
-# }

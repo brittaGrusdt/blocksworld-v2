@@ -2,6 +2,7 @@ library(truncnorm)
 library(dplyr)
 library(here)
 source(here("model", "R", "helper-functions.R"))
+fs = .Platform$file.sep
 
 create_dependent_tables <- function(params, cns){
   all_tables <- list()
@@ -78,7 +79,7 @@ create_independent_tables <- function(params){
   return(tables_wide)
 }
 
-create_tables <- function(params, nested=FALSE){
+create_tables <- function(params){
   set.seed(params$seed_tables)
   cns_dep=params$cns[params$cns != "A || C"]
   tables_all <- list()
@@ -88,30 +89,18 @@ create_tables <- function(params, nested=FALSE){
     unnest(c(vs, ps)) %>%
     group_by(bn_id) %>% pivot_wider(names_from="vs", values_from="ps") %>%
     likelihood(params$indep_sigma)
-  # if(nested){
-  #   tables = tables %>%
-  #     mutate(vs=list(c("AC", "A-C", "-AC", "-A-C")),
-  #            ps=list(c(`AC`, `A-C`, `-AC`, `-A-C`))) %>%
-  #     dplyr::select(-`AC`, -`A-C`, -`-AC`, -`-A-C`)
-  # }
   return(tables)
 }
 
-# filter_tables <- function(tables, params){
-#   if(is.na(params$nor_beta)){
-#     df <- tables %>% filter(is.na(nor_beta) & is.na(nor_theta))
-#   } else{
-#     df <- tables %>% filter(nor_beta == params$nor_beta & nor_theta == params$nor_theta)
-#   }
-#   df <- df %>% filter(n_tables == params$n_tables & indep_sigma == params$indep_sigma)
-#   return(df)
-# }
-
-# unnest_tables <- function(tables){
-#   tables <- tables %>% rowid_to_column()
-#   tables_long <- tables %>% unnest(cols=c(vs, ps)) %>% rename(cell=vs, val=ps)
-#   return(tables_long)
-# }
+sampleModelTables = function(){
+  params <- configure(c("model_tables"))
+  params$target <- file.path(params$target_dir, params$target_fn, fsep=fs)
+  params$target_params <- file.path(params$target_dir, params$target_params, fsep=fs)
+  tables.model <- create_tables(params)
+  save_data(tables.model, params$tables_path)
+  save_data(params, params$target_params)
+  return(list(tables=tables.model, params=params))
+}
 
 plot_tables <- function(data){
   # data must be in long format with columns *cell* and *val*

@@ -7,6 +7,8 @@ source(here("model", "R", "helpers-values-of-interest.R"))
 source(here("R", "utils-exp2.R"))
 
 params <- configure(c("speaker"))
+# params <- configure(c("ll"))
+
 
 # Setup -------------------------------------------------------------------
 dir.create(params$target_dir, recursive = TRUE)
@@ -14,12 +16,7 @@ params$target <- file.path(params$target_dir, params$target_fn, fsep=.Platform$f
 params$target_params <- file.path(params$target_dir, params$target_params, fsep=.Platform$file.sep)
 
 ## Generate/Retrieve tables
-if(!"tables_path" %in% names(params)){
-  # params$tables_path <- file.path(params$target_dir, params$tables_fn, fsep=.Platform$file.sep)
-  params$tables_path <- here("data", params$tables_fn)
-}
-
-tables <- readRDS(params$tables_path)
+tables <- readRDS(params$tables_empiric)
 print(paste("tables read from:", params$tables_path))
 params$tables = tables %>% ungroup %>%
   dplyr::select(table_id, ps, vs, stimulus, starts_with("logL_"))

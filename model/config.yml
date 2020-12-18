@@ -1,6 +1,6 @@
 default:
-  tables_empiric: "./data/prolific/results/toy-blocks-pilot-2/model-tables-stimuli.rds"
-  tables_path: "./model/data/tables-default.rds"
+  tables_empiric: "./model/data/tables-model-empirical.rds"
+  tables_path: "./model/data/tables-model.rds"
   target_dir: "./model/data"
   params_ll: "./data/prolific/results/toy-blocks-pilot-2/results-dirichlet-fits.csv"
   utts_path: "./model/data/utterances-tables-stimuli.rds"
@@ -26,9 +26,9 @@ model_tables:
   n_ind_tables: 10000
   n_dep_tables: 2500
   indep_sigma: 0.01
-  tables_path: "./model/data/tables-default.rds"
+  tables_path: "./model/data/tables-model.rds"
   target_dir: "./model/data"
-  target_params: "params-tables-default.rds"
+  target_params: "params-tables-model.rds"
 
 ## 2. Level configurations ##
 # @arg utt: - if set to "p_delta" or "p_rooij", respective value must be

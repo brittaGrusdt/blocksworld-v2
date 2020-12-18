@@ -202,25 +202,39 @@ plotTrainUncertain("ramp")
 save_to = paste(PLOT.dir, "comparison-exp1-exp2-model", sep=SEP)
 if(!dir.exists(save_to)) {dir.create(save_to)}
 
-df = data.human_model %>% ungroup() %>% filter(!is.na(cn)) %>%
-  dplyr::select(prolific_id, id, cn) %>% unique() %>%
-  group_by(prolific_id, id) %>%
+dat = data.human_model.each %>% 
+  separate(p_id, into=c("pid", "stimulus", "prior"), sep="_") %>%
+  unite("stimulus", c("stimulus", "prior"), sep="_") %>%
+  filter(id==stimulus & prolific_id == pid) %>%
+  dplyr::select(-pid, -stimulus) %>% distinct()
+
+df.ids = dat %>% dplyr::select(prolific_id, id, empirical_id) %>% distinct() %>%
   rowid_to_column("rowid")
 
-for(i in seq(1, nrow(df))) {
-  pid = df[i,]$prolific_id
-  stimulus = df[i,]$id
-  df.row = data.human_model %>% filter(prolific_id == (!! pid) & id == (!! stimulus))
-  df.row.long = df.row %>% group_by(utterance) %>% 
-    pivot_longer(cols=c("model.p", "human_exp1"), names_to="predictor", values_to="p")
+mapping = readRDS(paste(RESULT.dir, "mapping-tables-ids.rds", sep=SEP))
+
+for(i in seq(1, nrow(df.ids))) {
+  print(i)
+  pid = df.ids[i,]$prolific_id
+  stimulus = df.ids[i,]$id
+  df.row = dat %>% filter(prolific_id == (!! pid) & id == (!! stimulus)) %>%
+    mutate(table_id=as.factor(table_id))
+  # df.row.long = df.row %>% group_by(utterance) %>% 
+    # pivot_longer(cols=c("model.p", "human_exp1"), names_to="predictor", values_to="p")
   target_folder = paste(save_to, pid, sep=SEP) 
   if(!dir.exists(target_folder)) dir.create(target_folder);
   
-  p = df.row.long %>% ggplot() + 
-    geom_bar(aes(y=utterance, x=p, fill=predictor), stat="identity", position="dodge") +
-    geom_point(data=df.row %>% filter(human_exp2==1), aes(x=1, y=utterance), size=4, color='orange') +
+  behavioral = df.row %>% dplyr::select(-table_id, -cn, -model.p) %>% distinct()
+  behavioral.uttered = behavioral %>% filter(human_exp2==1) 
+
+  p = df.row %>% ggplot(aes(y=utterance)) + 
+    geom_bar(data=behavioral, aes(x=human_exp1), stat="identity", color='grey') +
+    geom_point(aes(x=model.p, color=table_id)) +
+    geom_point(data=behavioral.uttered, aes(x=human_exp2), color='orange',
+               size=4, shape=18) +
     theme_classic(base_size=20) +
-    theme(legend.position="top")
+    theme(legend.position="top") +
+    labs(x="model prediction/behavioral exp1")
   ggsave(paste(save_to, SEP, pid, SEP, stimulus, ".png", sep=""), p, height=12, width=10)
 }
 

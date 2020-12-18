@@ -138,7 +138,8 @@ distances = distancesResponses(df)
 saveRDS(object=distances,
         file=paste(result_dir, "distances-quality.rds", sep=.Platform$file.sep))
 
-
+# generate tables that are provided to model
+tables.model = makeAndSaveModelTables()
 
 # functions ---------------------------------------------------------------
 filter_data = function(target_dir, exp.name, by_quality=FALSE,

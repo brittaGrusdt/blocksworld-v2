@@ -6,8 +6,8 @@ source(here("model", "R", "helper-functions.R"))
 source(here("model", "R", "helpers-values-of-interest.R"))
 source(here("R", "utils-exp2.R"))
 
-params <- configure(c("speaker"))
-# params <- configure(c("ll"))
+# params <- configure(c("speaker"))
+params <- configure(c("pl"))
 
 
 # Setup -------------------------------------------------------------------
@@ -22,7 +22,7 @@ params$tables = tables %>% ungroup %>%
   dplyr::select(table_id, ps, vs, stimulus, starts_with("logL_"))
 
 params$params_ll = read_csv(params$params_ll)
-if("empirical" %in% colnames(tables)){
+if(!("bn_ids" %in% names(params))){
   params$bn_ids = tables %>% filter(empirical) %>% pull(table_id)
 }
 
@@ -46,7 +46,8 @@ posterior <- run_webppl(params$model_path, params)
 
 # restructure data and save
 if(params$level_max == "speaker") {
-  speaker <- posterior %>% structure_speaker_data(params) %>% group_by(stimulus)
+  speaker <- posterior %>% structure_speaker_data(params) %>%
+    group_by(stimulus)
   speaker_avg <- speaker %>% average_speaker(params) %>% arrange(avg)
   speaker_avg
   

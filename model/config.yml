@@ -40,6 +40,7 @@ speaker:
   target_fn: "results-speaker.rds"
   target_params: "params-speaker.rds"
   n_samples: 0 # bns sampled from prior
+  #bn_ids: !expr c(5)
   
 prior:
   level_max: "prior"

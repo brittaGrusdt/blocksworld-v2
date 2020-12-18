@@ -134,7 +134,10 @@ webppl_speaker_distrs_to_tibbles <- function(posterior){
 }
 
 
-structure_speaker_data <- function(posterior, params){
+structure_speaker_data <- function(posterior, params, save=NA){
+  if(is.na(save)){
+    save=params$save
+  }
   speaker_wide <- webppl_speaker_distrs_to_tibbles(posterior)
   bns = posterior$bns %>% rowid_to_column("bn_id") %>% group_by(bn_id) %>%
     unnest(c(table.probs, table.support)) %>%
@@ -150,7 +153,7 @@ structure_speaker_data <- function(posterior, params){
                   names_to = "utterance", values_to = "probs", names_prefix="utt_") %>%
         add_column(bias=params$bias)
   
-  if(params$save){
+  if(save){
     df %>% save_data(params$target)
     params %>% save_data(params$target_params)
   }

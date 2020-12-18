@@ -1,3 +1,4 @@
+source(here("R", "utils.R"))
 # conditional perfection --------------------------------------------------
 
 # 1. returns the minimum of the hellinger distances between P(cn) and

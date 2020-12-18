@@ -87,21 +87,21 @@ if(LEVEL_MAX == "speaker"){
   }, bns) : bns;
   display('nb bns considered for speaker:' + bns_in.length)
   var bns_uniq = []
-  var stimuli = []
+  // var cns = []
   var bn_ids = reduce(function(bn, acc){
     var idx = acc.indexOf(bn.id);
     if(idx == -1){
       bns_uniq.push(bn)
-      stimuli.push(bn.stimulus)
+      // cns.push(bn.cn)
       acc.concat([bn.id])
     } else {
-      if(stimuli[idx] != bn.stimulus){
-        bns_uniq.push(bn)
-        stimuli.push(bn.stimulus)
-        acc.concat([bn.id])
-      } else {
+      // if(cns[idx] != bn.cn){
+      //   bns_uniq.push(bn)
+      //   // cns.push(bn.cn)
+      //   acc.concat([bn.id])
+      // } else {
         acc.concat([])
-      }
+      // }
     }
   }, [], bns_in);
   display('# filtered bns that are input to speaker (where condition, if any, holds): ' + bns_uniq.length)

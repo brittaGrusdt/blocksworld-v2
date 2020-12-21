@@ -143,7 +143,8 @@ structure_speaker_data <- function(posterior, params, save=NA){
     unnest(c(table.probs, table.support)) %>%
     pivot_wider(names_from=table.support, values_from=table.probs) %>%
     rename(table_id=id) %>% dplyr::select(-cn);
-  df.wide = left_join(speaker_wide %>% dplyr::select(-`AC`, -`A-C`, -`-AC`, -`-A-C`), bns, by = "bn_id")
+  df.wide = left_join(speaker_wide %>%
+                        dplyr::select(-`AC`, -`A-C`, -`-AC`, -`-A-C`), bns, by = "bn_id")
   df <- acceptability_conditions(df.wide)
   df <- df %>% group_by(bn_id, table_id) %>%
     pivot_longer(cols=c(starts_with("utt_")),

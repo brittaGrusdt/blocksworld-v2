@@ -2,8 +2,8 @@ library(tidyverse)
 library(greta)
 library(here)
 library(MCMCpack)
-source(here("R", "joint_experiment", "analysis-utils.R"))
-
+source(here("R", "utils.R"))
+result_dir = here("data", "prolific", "results", "toy-blocks-pilot-2")
 fn <- here("data", "prolific", "results", "toy-blocks-pilot-2",
            "toy-blocks-pilot-2_tables_all.csv")
 table_data <- read_csv(fn) %>% arrange(id)
@@ -43,9 +43,8 @@ results <- map_df(
     get_optimal_alphas(st_id = s)  
   }
 )
-write_csv(results, here("data", "prolific", "results", "toy-blocks-pilot-2",
-                                                "results-dirichlet-fits.csv"))
-# results=read_csv(here("data", "prolific", "results", "toy-blocks-pilot-2", "results-dirichlet-fits.csv"))
+write_csv(results, paste(result_dir, "results-dirichlet-fits.csv", sep=.Platform$file.sep))
+# results=read_csv(paste(result_dir, "results-dirichlet-fits.csv", sep=.Platform$file.sep))
 
 # generate tables ---------------------------------------------------------
 # sample tables from fitted dirichlet priors
@@ -57,53 +56,62 @@ sample_tables <- function(params, n){
     })
   )
 }
-n=5000
+n=1700
 tables.generated = sample_tables(results, n) %>%
   rename(`AC`=V1, `A-C`=V2, `-AC`=V3, `-A-C`=V4) %>%
   mutate(AC=round(AC, 2), `A-C`=round(`A-C`,2),
          `-AC`=round(`-AC`, 2), `-A-C`=round(`-A-C`, 2)) %>%
   distinct() %>% rowid_to_column("table_id")
 
-# model tables
+tables.generated %>% group_by(stimulus) %>% 
+  save_data(paste(result_dir, "tables-fitted-dirichlet.rds", sep=.Platform$file.sep))
+# use model tables insteads
 # tables.generated = readRDS(here("model", "data", "tables-model.rds")) %>%
 #   mutate(AC=round(AC, 2), `A-C`=round(`A-C`,2),
 #          `-AC`=round(`-AC`, 2), `-A-C`=round(`-A-C`, 2)) 
 
 # which of the empirical tables were sampled from fitted priors?
 # all (potentially redundant) empiric tables  
-tables.empiric = readRDS(paste(RESULT.dir, "tables-empiric-pids.rds", sep=SEP))
+tables.empiric = readRDS(paste(result_dir, "tables-empiric-pids.rds", sep=.Platform$file.sep))
 tables = left_join(tables.generated, tables.empiric, by=c("AC", "A-C", "-AC", "-A-C"))
 empirical_in_tables = tables %>% filter(!is.na(empirical_id)) %>% pull(empirical_id) %>% unique() 
 length(empirical_in_tables) / nrow(tables.empiric)
 
 # check how many tables were sampled from fitted priors given augmented tables
-tables.emp.augmented = readRDS(paste(RESULT.dir, "tables-empiric-augmented.rds", sep=SEP))
+tables.emp.augmented = readRDS(paste(result_dir, "tables-empiric-augmented.rds",
+                                     sep=.Platform$file.sep))
 tables = left_join(tables.generated, tables.emp.augmented,
                    by=c("AC", "A-C", "-AC", "-A-C")) %>% 
   mutate(empirical = !is.na(empirical_id))
 empirical_in_tables = tables %>% pull(empirical_id) %>% unique() 
 length(empirical_in_tables) / nrow(tables.empiric)
 
+# save mapping of table-empirical ids
+tables.emp = tables %>% filter(empirical) %>%
+  dplyr::select(-empirical, -augmented_id)
+save_data(tables.emp, paste(result_dir, "mapping-tables-fitted-dirichlet-ids.rds",
+                            sep=.Platform$file.sep))
+
 # preparte tables for input to webppl model -------------------------------
-tables.model = tables %>% dplyr::select(-augmented_id, -empirical_id)
+tables.model = tables %>% dplyr::select(-augmented_id)
 tables.toWPPL = bind_cols(
   prop.table(
     tables.model %>%
-      dplyr::select(-table_id, -empirical, -cn, -starts_with("logL_")) %>%
+      dplyr::select(-table_id, -stimulus, -empirical_id, -empirical) %>%
       as.matrix() + epsilon, 1
   ) %>% as_tibble(),
-  tables.model %>% dplyr::select(table_id, cn, empirical, starts_with("logL_"))
+  tables.model %>% dplyr::select(table_id, stimulus, empirical_id, empirical)
 )
 
+indep_sigma <- configure(c("model_tables"))$indep_sigma
 tables.toWPPL = tables.toWPPL %>%  group_by(table_id) %>% 
   mutate(vs=list(c("AC", "A-C", "-AC", "-A-C")),
-         ps=list(c(`AC`, `A-C`, `-AC`, `-A-C`))) %>%
-  add_column(stimulus="")
+         ps=list(c(`AC`, `A-C`, `-AC`, `-A-C`))) %>% 
+  likelihood(indep_sigma)
 
-#save_to = paste(RESULT.dir, "model-tables-stimuli.rds", sep=SEP)
-# save_to = params$tables_path
-# save_data(tables.toWPPL, save_to)
-# save_data(params, params$target_params)
+# save the sampled tables as version that is in right format for webppl
+tables.toWPPL %>% 
+  save_data(paste(result_dir, "tables-fitted-dirichlet-empirical.rds", sep=.Platform$file.sep))
 
 # compute log likelihood for each sample table and each stimulus
 ll_dirichlet = function(tables, par){
@@ -146,7 +154,7 @@ STIMULI = TABLES.all$id %>% unique()
 #          ps=list(c(`AC`, `A-C`, `-AC`, `-A-C`))) %>% 
 #   rename(stimulus_id=table_id) # for model, id needs to have name stimulus_id
 # 
-# save_to = paste(RESULT.dir, "model-tables-stimuli.rds", sep=SEP)
+# save_to = paste(result_dir, "model-tables-stimuli.rds", sep=.Platform$file.sep)
 # saveRDS(tables.toWPPL, save_to)
 # # tables.toWPPL = readRDS(save_to)
 
@@ -155,7 +163,8 @@ STIMULI = TABLES.all$id %>% unique()
 # Goodness fits -----------------------------------------------------------
 ll_empirical_data = function(params){
   # only exact empirical data ll 
-  tables = readRDS(paste(RESULT.dir, "mapping-tableID-prolificID.rds", sep=SEP)) %>%
+  tables = readRDS(paste(result_dir, "mapping-tableID-prolificID.rds",
+                         sep=.Platform$file.sep)) %>%
     unnest(c(ids)) %>% separate(col=ids, into=c("prolific_id", "trial", "prior"), sep="_") %>%
     unite("stimulus_id", c(trial, prior)) %>% group_by(stimulus_id) %>%
     rename(augmented_id=empirical_id)
@@ -196,11 +205,11 @@ goodness_fits_dirichlet = function(params, n, N=30){
   }) ;
   return(p_values)
 }
-params=read_csv(here("data", "prolific", "results", "toy-blocks-pilot-2",
-                     "results-dirichlet-fits.csv")) %>% filter(id != "ind2")
+params=read_csv(paste(result_dir, "results-dirichlet-fits.csv",
+                      sep=.Platform$file.sep)) %>% filter(id != "ind2")
 res.goodness = goodness_fits_dirichlet(params, 10**4) %>% arrange(desc(p.val));
 res.goodness %>% select(-s) %>% distinct()
-saveRDS(res.goodness, paste(RESULT.dir, "simulated-p-values.rds", sep=.Platform$file.sep))
+saveRDS(res.goodness, paste(result_dir, "simulated-p-values.rds", sep=.Platform$file.sep))
 
 p_vals = res.goodness %>% dplyr::select(stimulus_id, p.val) %>% distinct()
 p_vals

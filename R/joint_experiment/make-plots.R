@@ -1,3 +1,4 @@
+library(cowplot)
 source("R/joint_experiment/analysis-utils.R")
 
 pids = data.joint.orig %>% pull(prolific_id) %>% unique()
@@ -199,44 +200,105 @@ plotTrainUncertain("ramp")
 
 
 # Model-vs-human ----------------------------------------------------------
-save_to = paste(PLOT.dir, "comparison-exp1-exp2-model", sep=SEP)
-if(!dir.exists(save_to)) {dir.create(save_to)}
-
-dat = data.human_model.each %>% 
-  separate(p_id, into=c("pid", "stimulus", "prior"), sep="_") %>%
-  unite("stimulus", c("stimulus", "prior"), sep="_") %>%
-  filter(id==stimulus & prolific_id == pid) %>%
-  dplyr::select(-pid, -stimulus) %>% distinct()
-
-df.ids = dat %>% dplyr::select(prolific_id, id, empirical_id) %>% distinct() %>%
-  rowid_to_column("rowid")
-
-mapping = readRDS(paste(RESULT.dir, "mapping-tables-ids.rds", sep=SEP))
-
-for(i in seq(1, nrow(df.ids))) {
-  print(i)
-  pid = df.ids[i,]$prolific_id
-  stimulus = df.ids[i,]$id
-  df.row = dat %>% filter(prolific_id == (!! pid) & id == (!! stimulus)) %>%
-    mutate(table_id=as.factor(table_id))
-  # df.row.long = df.row %>% group_by(utterance) %>% 
-    # pivot_longer(cols=c("model.p", "human_exp1"), names_to="predictor", values_to="p")
-  target_folder = paste(save_to, pid, sep=SEP) 
-  if(!dir.exists(target_folder)) dir.create(target_folder);
+plotModelAndBehavioral = function(use_fitted_tables){
+  if(use_fitted_tables){
+    save_to = paste(PLOT.dir, "comparison-exp1-exp2-model", "fitted-tables", sep=SEP)
+    joint_data = data.behav_model.fitted.each
+    mapping = readRDS(paste(RESULT.dir, "mapping-tables-fitted-dirichlet-ids.rds", sep=SEP))
+    prior = readRDS(here("model", "results", "fitted-tables", "results-prior.rds")) %>%
+      dplyr::select(cn, table_id, prob) %>% distinct()
+  } else{
+    save_to = paste(PLOT.dir, "comparison-exp1-exp2-model", "theoretic-tables", sep=SEP)
+    joint_data = data.behav_model.theoretic.each
+    mapping = readRDS(here("model", "data", "mapping-tables-model-ids.rds"))
+    prior = readRDS(here("model", "results", "theoretic-tables", "results-prior.rds")) %>%
+      ungroup() %>% dplyr::select(cn, table_id, prob) %>% distinct()
+  }
+  if(!dir.exists(save_to)) {dir.create(save_to)}
   
-  behavioral = df.row %>% dplyr::select(-table_id, -cn, -model.p) %>% distinct()
-  behavioral.uttered = behavioral %>% filter(human_exp2==1) 
-
-  p = df.row %>% ggplot(aes(y=utterance)) + 
-    geom_bar(data=behavioral, aes(x=human_exp1), stat="identity", color='grey') +
-    geom_point(aes(x=model.p, color=table_id)) +
-    geom_point(data=behavioral.uttered, aes(x=human_exp2), color='orange',
-               size=4, shape=18) +
-    theme_classic(base_size=20) +
-    theme(legend.position="top") +
-    labs(x="model prediction/behavioral exp1")
-  ggsave(paste(save_to, SEP, pid, SEP, stimulus, ".png", sep=""), p, height=12, width=10)
+  dat = joint_data %>% 
+    separate(p_id, into=c("pid", "stimulus", "prior"), sep="_") %>%
+    unite("stimulus", c("stimulus", "prior"), sep="_") %>%
+    filter(id==stimulus & prolific_id == pid) %>%
+    dplyr::select(-pid, -stimulus) %>% distinct()
+  
+  df.ids = dat %>% dplyr::select(prolific_id, id, empirical_id) %>% distinct() %>%
+    rowid_to_column("rowid")
+  
+  for(i in seq(1, nrow(df.ids))) {
+    if(i%%10==0) print(i)
+    pid = df.ids[i,]$prolific_id
+    stimulus = df.ids[i,]$id
+    df.row = dat %>% filter(prolific_id == (!! pid) & id == (!! stimulus)) %>%
+      mutate(table_id=as.factor(table_id))
+    target_folder = paste(save_to, pid, sep=SEP) 
+    if(!dir.exists(target_folder)) dir.create(target_folder);
+    
+    behavioral = df.row %>% dplyr::select(-table_id, -cn, -model.p) %>% distinct()
+    behavioral.uttered = behavioral %>% filter(human_exp2==1) 
+    table_ids = df.row$table_id %>% unique()
+    df.prior = prior %>% filter(table_id %in% table_ids) %>% distinct() %>%
+      group_by(table_id) %>%
+      mutate(table_id=as.factor(table_id), cn=as.factor(cn),
+             s_prob=sum(prob), p=prob/s_prob)
+    
+    p.prior = df.prior %>% ggplot(aes(y=p, x=table_id, fill=cn)) +
+      geom_bar(stat="identity", position="dodge") +
+      theme_classic(base_size = 20) +
+      theme(legend.position="right") +
+      labs(y="prior(cn)") 
+    
+    p.speaker = df.row %>% ggplot(aes(y=utterance)) + 
+      geom_bar(data=behavioral, aes(x=human_exp1), stat="identity", color='grey') +
+      geom_point(aes(x=model.p, color=table_id)) +
+      geom_point(data=behavioral.uttered, aes(x=human_exp2), color='orange',
+                 size=4, shape=18) +
+      theme_classic(base_size=20) +
+      theme(legend.position="bottom") +
+      labs(x="model prediction/behavioral exp1", title="")
+    
+    p=plot_grid(p.speaker, p.prior, align = "h", nrow = 1, axis = "b",
+              rel_widths = c(0.6, 0.4))
+    ggsave(paste(save_to, SEP, pid, SEP, stimulus, ".png", sep=""), height=17, width=20)
+  }
 }
+
+# model predictions with theoretic/dirichlet-fitted tables
+plotModelAndBehavioral(use_fitted_tables = FALSE)
+plotModelAndBehavioral(use_fitted_tables = TRUE)
+
+
+# save_to = paste(PLOT.dir, "comparison-exp1-exp2-model", "theoretic-tables", sep=SEP)
+# if(!dir.exists(save_to)) {dir.create(save_to)}
+# 
+# dat = data.behav_model.theoretic.each %>% 
+#   separate(p_id, into=c("pid", "stimulus", "prior"), sep="_") %>%
+#   unite("stimulus", c("stimulus", "prior"), sep="_") %>%
+#   filter(id==stimulus & prolific_id == pid) %>%
+#   dplyr::select(-pid, -stimulus) %>% distinct()
+# 
+# df.ids = dat %>% dplyr::select(prolific_id, id, empirical_id) %>% distinct() %>%
+#   rowid_to_column("rowid")
+# 
+# mapping = readRDS(paste(RESULT.dir, "mapping-tables-ids.rds", sep=SEP))
+# 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

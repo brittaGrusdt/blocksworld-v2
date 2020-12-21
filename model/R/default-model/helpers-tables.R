@@ -192,14 +192,16 @@ analyze_tables <- function(path, theta, TABLES=tibble()){
   TABLES.wide <-  TABLES %>% pivot_wider(names_from = vs, values_from = ps)  
     # TABLES.wide %>% filter(AC > 0.82 & `A-C` <0.0085 & `-AC`<0.11 & `-A-C` < 0.07 &
                          # AC < 0.83)
+  n.wide = nrow(TABLES.wide)
+  n.long = nrow(TABLES)
   # conjunctions
   conj <- TABLES %>% mutate(conj=case_when(ps > theta ~ TRUE,
                             TRUE ~ FALSE))
   print('#true conjunctions')
-  print(paste("AC", conj %>% filter(conj & vs == "AC") %>% nrow))
-  print(paste("A-C", conj %>% filter(conj & vs == "A-C") %>% nrow))
-  print(paste("-AC", conj %>% filter(conj & vs == "-AC") %>% nrow))
-  print(paste("-A-C", conj %>% filter(conj & vs == "-A-C") %>% nrow))
+  print(paste("AC", round(conj %>% filter(conj & vs == "AC") %>% nrow / n.long, 2)))
+  print(paste("A-C", round(conj %>% filter(conj & vs == "A-C") %>% nrow / n.long, 2)))
+  print(paste("-AC", round(conj %>% filter(conj & vs == "-AC") %>% nrow / n.long, 2)))
+  print(paste("-A-C", round(conj %>% filter(conj & vs == "-A-C") %>% nrow / n.long, 2)))
 
   print('#true ifs')
   conditionals <- TABLES.wide %>%
@@ -208,10 +210,10 @@ analyze_tables <- function(path, theta, TABLES=tibble()){
                pcna = compute_cond_prob(TABLES.wide, "P(C|-A)") %>% pull(p) > theta,
                panc = compute_cond_prob(TABLES.wide, "P(A|-C)") %>% pull(p) > theta
               )
-  print(paste("P(C|A)", conditionals %>% filter(pca) %>% nrow))
-  print(paste("P(A|C)", conditionals %>% filter(pac) %>% nrow))
-  print(paste("P(C|-A)", conditionals %>% filter(pcna) %>% nrow))
-  print(paste("P(-A|-C)", conditionals %>% filter(panc) %>% nrow))
+  print(paste("P(C|A)", round(conditionals %>% filter(pca) %>% nrow / n.wide, 2)))
+  print(paste("P(A|C)", round(conditionals %>% filter(pac) %>% nrow / n.wide, 2)))
+  print(paste("P(C|-A)", round(conditionals %>% filter(pcna) %>% nrow / n.wide, 2)))
+  print(paste("P(-A|-C)", round(conditionals %>% filter(panc) %>% nrow / n.wide, 2)))
 
   print('#true likely+literal')
   literals <- TABLES.wide %>%
@@ -219,10 +221,10 @@ analyze_tables <- function(path, theta, TABLES=tibble()){
            c=`AC` + `-AC` > 0.5,
            na=`-AC` + `-A-C` > 0.5,
            nc=`A-C` + `-A-C` > 0.5)
-  print(paste("likely A", literals %>% filter(a) %>% nrow))
-  print(paste("likely C", literals %>% filter(c) %>% nrow))
-  print(paste("likely -A", literals %>% filter(na) %>% nrow))
-  print(paste("likely -C", literals %>% filter(nc) %>% nrow))
+  print(paste("likely A", round(literals %>% filter(a) %>% nrow / n.wide, 2)))
+  print(paste("likely C", round(literals %>% filter(c) %>% nrow / n.wide, 2)))
+  print(paste("likely -A", round(literals %>% filter(na) %>% nrow / n.wide, 2)))
+  print(paste("likely -C", round(literals %>% filter(nc) %>% nrow / n.wide, 2)))
   
   print('#true literals')
   literals <- TABLES.wide %>%
@@ -230,10 +232,10 @@ analyze_tables <- function(path, theta, TABLES=tibble()){
            c=`AC` + `-AC` > theta,
            na=`-AC` + `-A-C` > theta,
            nc=`A-C` + `-A-C` > theta)
-  print(paste("A", literals %>% filter(a) %>% nrow))
-  print(paste("C", literals %>% filter(c) %>% nrow))
-  print(paste("-A", literals %>% filter(na) %>% nrow))
-  print(paste("-C", literals %>% filter(nc) %>% nrow))
+  print(paste("A", round(literals %>% filter(a) %>% nrow / n.wide, 2)))
+  print(paste("C", round(literals %>% filter(c) %>% nrow / n.wide, 2)))
+  print(paste("-A", round(literals %>% filter(na) %>% nrow / n.wide, 2)))
+  print(paste("-C", round(literals %>% filter(nc) %>% nrow / n.wide, 2)))
 }
 
 # associate tables with stimuli of experiment

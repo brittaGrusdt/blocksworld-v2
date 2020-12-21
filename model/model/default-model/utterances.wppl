@@ -14,9 +14,15 @@ globalStore.params_ll = data["params_ll"]
 
 var tables_list = data["tables"]
 globalStore.Tables = map(function(obj){
-  return {"id": obj["table_id"], "Table": Categorical({"vs": obj["vs"], "ps": obj["ps"]}),
-          "stimulus": obj["stimulus"]}
+  var p = Categorical({"vs": obj["vs"], "ps": obj["ps"]})
+  return {
+    id: obj.table_id, Table: p, stimulus: obj.stimulus,
+    logL_if_ac: obj.logL_if_ac, logL_if_ca: obj.logL_if_ca,
+    logL_if_anc: obj.logL_if_anc, logL_if_cna: obj.logL_if_cna,
+    logL_ind: obj.logL_ind
+  }
 }, tables_list)
+
 
 if(verbose){
   display("bias: " + BIAS)

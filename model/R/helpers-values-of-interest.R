@@ -121,9 +121,10 @@ voi_pa <- function(posterior, params){
 }
 
 voi_default <- function(posterior, params){
-  df = posterior %>% ungroup() %>% dplyr::select(-starts_with("p_"), -bn_id, -cn)
+  df = posterior %>% ungroup() %>% dplyr::select(-starts_with("p_"), -bn_id) %>%
+    group_by(table_id, cn, bn.stimulus)
   df.wide = df %>% pivot_wider(names_from="cell", values_from="val") %>%
-    rename(bg=AC, b=`A-C`, g=`-AC`, none=`-A-C`, id=bn.stimulus )%>%
+    rename(bg=AC, b=`A-C`, g=`-AC`, none=`-A-C`, id=bn.stimulus) %>%
     add_probs() %>% dplyr::select(!starts_with("p_likely")) %>%
     group_by(id, level)
   

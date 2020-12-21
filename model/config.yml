@@ -1,9 +1,6 @@
 default:
-  tables_empiric: "./model/data/tables-model-empirical.rds"
-  tables_path: "./model/data/tables-model.rds"
-  target_dir: "./model/data"
-  params_ll: "./data/prolific/results/toy-blocks-pilot-2/results-dirichlet-fits.csv"
-  utts_path: "./model/data/utterances-tables-stimuli.rds"
+  dir_empiric: "./data/prolific/results/toy-blocks-pilot-2"
+  params_ll: "results-dirichlet-fits.csv"
   generate_utterances: false
   seed_tables: 202008
   save: true
@@ -18,17 +15,27 @@ default:
   #seed_webppl: !expr as.numeric(Sys.time())
   seed_webppl: 123467
   add_accept_conditions: true
-  utt: "A > C"
   vars: !expr c("A", "C")
   bias: "none"
 
-model_tables:
-  n_ind_tables: 10000
-  n_dep_tables: 2500
-  indep_sigma: 0.01
+# only add new variables, since if more than two config-ids are loaded
+# default value is taken again if it does not appear in a later loaded config-id, 
+# although it had been overwritten in a previously loaded config-id
+tables_theoretic:
+  tables_empiric: "./model/data/tables-model-empirical.rds" # tables-model with empirical_ids added
   tables_path: "./model/data/tables-model.rds"
-  target_dir: "./model/data"
-  target_params: "params-tables-model.rds"
+  tables_mapping: "./model/data/mapping-tables-model-ids.rds"
+  target_dir: "./model/results/theoretic-tables"
+  utts_path: "./model/data/utterances-theoretic-tables.rds"
+
+tables_fitted_dirichlet:
+  # tables-fitted with empirical_ids added
+  tables_empiric: "./data/prolific/results/toy-blocks-pilot-2/tables-fitted-dirichlet-empirical.rds"
+  tables_path: "./data/prolific/results/toy-blocks-pilot-2/tables-fitted-dirichlet.rds"
+  tables_mapping: "./data/prolific/results/toy-blocks-pilot-2/mapping-tables-fitted-dirichlet-ids.rds"
+  target_dir: "./model/results/fitted-tables"
+  utts_path: "./model/data/utterances-fitted-tables.rds"
+
 
 ## 2. Level configurations ##
 # @arg utt: - if set to "p_delta" or "p_rooij", respective value must be
@@ -69,4 +76,14 @@ pl:
   target_params: "params-PL.rds"
 
 
+# to generate tables based on theoretic beta distributions
+model_tables:
+  n_ind_tables: 10000
+  n_dep_tables: 2500
+  indep_sigma: 0.01
+  tables_path: "./model/data/tables-model.rds"
+  tables_empiric: "./model/data/tables-model-empirical.rds" #model tables with empirical-ids added
+  target_dir: "./model/data"
+  target_params: "params-tables-model.rds"
+  target_mapping: "./model/data/mapping-tables-model-ids.rds"
 # there needs to be 1 blank final line!

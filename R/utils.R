@@ -472,7 +472,7 @@ makeAndSaveModelTables = function(){
   # save mapping of table-empirical ids
   tables.emp = df.tables %>% filter(empirical) %>%
     dplyr::select(-empirical, -starts_with("logL_"))
-  save_data(tables.emp, paste(result_dir, "mapping-tables-ids.rds", sep=fs))
+  save_data(tables.emp, dat.model$params$target_mapping)
   tables.toWPPL = bind_cols(
     prop.table(
       df.tables %>%

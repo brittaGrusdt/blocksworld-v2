@@ -6,8 +6,14 @@ source(here("model", "R", "helper-functions.R"))
 source(here("model", "R", "helpers-values-of-interest.R"))
 source(here("R", "utils-exp2.R"))
 
-# params <- configure(c("speaker"))
-params <- configure(c("pl"))
+# params <- configure(c("prior", "tables_theoretic"))
+# params <- configure(c("speaker", "tables_theoretic"))
+# params <- configure(c("pl", "tables_theoretic"))
+
+
+# params <- configure(c("prior", "tables_fitted_dirichlet"))
+# params <- configure(c("speaker", "tables_fitted_dirichlet"))
+params <- configure(c("pl", "tables_fitted_dirichlet"))
 
 
 # Setup -------------------------------------------------------------------
@@ -21,7 +27,7 @@ print(paste("tables read from:", params$tables_path))
 params$tables = tables %>% ungroup %>%
   dplyr::select(table_id, ps, vs, stimulus, starts_with("logL_"))
 
-params$params_ll = read_csv(params$params_ll)
+params$params_ll = read_csv(paste(params$dir_empiric, params$params_ll, sep=.Platform$file.sep))
 if(!("bn_ids" %in% names(params))){
   params$bn_ids = tables %>% filter(empirical) %>% pull(table_id)
 }
@@ -50,10 +56,8 @@ if(params$level_max == "speaker") {
     group_by(stimulus)
   speaker_avg <- speaker %>% average_speaker(params) %>% arrange(avg)
   speaker_avg
-  
-  res.behav_model = join_model_behavioral_data(
-    speaker, here("data", "prolific", "results", "toy-blocks-pilot-2")
-  );
+  res.behav_model = join_model_behavioral_data(speaker, params);
+
 } else if(params$level_max %in% c("priorN")){
     data <- structure_bns(posterior, params)
 } else if(params$level_max == "log_likelihood"){

@@ -141,8 +141,19 @@ data.train.norm.half = data.train.norm %>%
 
 
 # Model Prediction Data ---------------------------------------------------
-data.human_model.across = readRDS(here("data", "model-behavioral-across-table-ids.rds"))
-data.human_model.each = readRDS(here("data", "model-behavioral-each-table-id.rds"))
+data.behav_model.fitted.across = readRDS(
+  here("model", "results", "fitted-tables", "model-behavioral-across-table-ids.rds")
+)
+data.behav_model.fitted.each = readRDS(
+  here("model", "results", "fitted-tables", "model-behavioral-each-table-id.rds")
+)
+
+data.behav_model.theoretic.across = readRDS(
+  here("model", "results", "theoretic-tables","model-behavioral-across-table-ids.rds")
+)
+data.behav_model.theoretic.each = readRDS(
+  here("model", "results", "theoretic-tables", "model-behavioral-each-table-id.rds")
+)
 
 
 # Other -------------------------------------------------------------------

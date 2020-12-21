@@ -298,25 +298,24 @@ best_utt = function(model){
   return(df %>% rename(model=response))
 }
 
-join_model_behavioral_data = function(dat.speaker, dir_empiric){
+join_model_behavioral_data = function(dat.speaker, params){
   # 1. Model data correctly mapped to empirical tables
   data.model <- dat.speaker %>%
     group_by(table_id, cn) %>%
     dplyr::select(table_id, cn, stimulus, AC, `A-C`, `-AC`, `-A-C`,
                   utterance, probs)
   
-  tables.empiric = readRDS(paste(dir_empiric, "tables-empiric-pids.rds",
+  tables.empiric = readRDS(paste(params$dir_empiric, "tables-empiric-pids.rds",
                                  sep=.Platform$file.sep))
   pids = tables.empiric %>% ungroup() %>%
     dplyr::select(-AC, -`A-C`, -`-AC`, -`-A-C`) %>% unnest(c(p_id))
   
-  mapping.ids = readRDS(paste(dir_empiric, "mapping-tables-ids.rds",
-                              sep=.Platform$file.sep)) %>% group_by(empirical_id)
+  mapping.ids = readRDS(params$tables_mapping) %>% group_by(empirical_id)
   
   # iterate through all empirical ids, and note all table_ids that are associated 
   # with that empirical id (as there are several since empirical tables were augmented)
   ids = mapping.ids %>% ungroup() %>%
-    dplyr::select(table_id, empirical_id, cn) %>% unique()
+    dplyr::select(table_id, empirical_id) %>% unique()
   empirical_ids = ids %>% pull(empirical_id) %>% unique()
   table_map = mapping.ids %>% group_by(empirical_id) %>%
     summarize(table_ids=list(table_id), .groups="drop_last")
@@ -346,7 +345,7 @@ join_model_behavioral_data = function(dat.speaker, dir_empiric){
     separate(p_id, into=c("prolific_id", "stimulus", "prior"), sep="_") %>%
     unite("id", c(stimulus, prior), sep="_")
   
-  data.joint = readRDS(paste(dir_empiric, "human-exp1-exp2.rds",
+  data.joint = readRDS(paste(params$dir_empiric, "human-exp1-exp2.rds",
                              sep=.Platform$file.sep))
   res.behavioral = left_join(data.joint, emp_ids, by=c("prolific_id", "id")) %>%
     filter(!is.na(empirical_id)) %>% group_by(empirical_id)
@@ -363,15 +362,16 @@ join_model_behavioral_data = function(dat.speaker, dir_empiric){
                                       by=c("empirical_id", "utterance")) %>% 
     group_by(empirical_id)
   save_data(data.human_model_across,
-            here("data", "model-behavioral-across-table-ids.rds"))
-  
+            paste(params$target_dir, "model-behavioral-across-table-ids.rds",
+                  sep=.Platform$file.sep))
   # 3.2 each table_id seperately, i.e. more than one prediction per empirical id
   data.human_model_each = left_join(
     res.behavioral, res.model %>% rename(utterance=response, model.p=probs),
     by=c("empirical_id", "utterance")
   ) %>% group_by(empirical_id)
   save_data(data.human_model_each,
-            here("data", "model-behavioral-each-table-id.rds"))
+            paste(params$target_dir, "model-behavioral-each-table-id.rds",
+                  sep=.Platform$file.sep))
   
   return(data.human_model_each)
 }

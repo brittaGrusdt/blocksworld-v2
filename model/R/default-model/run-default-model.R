@@ -23,7 +23,7 @@ params$target_params <- file.path(params$target_dir, params$target_params, fsep=
 
 ## Generate/Retrieve tables
 tables <- readRDS(params$tables_empiric)
-print(paste("tables read from:", params$tables_path))
+print(paste("tables read from:", params$tables_empiric))
 params$tables = tables %>% ungroup %>%
   dplyr::select(table_id, ps, vs, stimulus, starts_with("logL_"))
 

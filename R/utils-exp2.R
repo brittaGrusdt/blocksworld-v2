@@ -308,7 +308,7 @@ join_model_behavioral_data = function(dat.speaker, params){
   tables.empiric = readRDS(paste(params$dir_empiric, "tables-empiric-pids.rds",
                                  sep=.Platform$file.sep))
   pids = tables.empiric %>% ungroup() %>%
-    dplyr::select(-AC, -`A-C`, -`-AC`, -`-A-C`) %>% unnest(c(p_id))
+    dplyr::select(-bg, -b, -g, -none) %>% unnest(c(p_id))
   
   mapping.ids = readRDS(params$tables_mapping) %>% group_by(empirical_id)
   
@@ -345,7 +345,7 @@ join_model_behavioral_data = function(dat.speaker, params){
     separate(p_id, into=c("prolific_id", "stimulus", "prior"), sep="_") %>%
     unite("id", c(stimulus, prior), sep="_")
   
-  data.joint = readRDS(paste(params$dir_empiric, "human-exp1-exp2.rds",
+  data.joint = readRDS(paste(params$dir_empiric, "human-exp1-smoothed-exp2.rds",
                              sep=.Platform$file.sep))
   res.behavioral = left_join(data.joint, emp_ids, by=c("prolific_id", "id")) %>%
     filter(!is.na(empirical_id)) %>% group_by(empirical_id)

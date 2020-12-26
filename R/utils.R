@@ -2,6 +2,8 @@ library(tidyverse)
 source(here("model", "R", "default-model", "helpers-tables.R"))
 
 fs = .Platform$file.sep
+epsilon = 0.000001
+seed_fitted_tables = "20202020"
 
 test_data <- function(path_to_csv) {
   data <- read_csv(path_to_csv) %>%
@@ -101,22 +103,13 @@ tidy_train <- function(df){
     mutate(prolific_id = factor(prolific_id), id = factor(id)) %>%
     group_by(prolific_id, id) %>%
     mutate(response = as.numeric(response), response = response/100)%>%
-    add_normed_exp1("train")
+    add_smoothed_exp1("train")
   
-  dat.train.norm = dat.train %>% rename(response=r_norm) %>%
+  dat.train.smooth = dat.train %>% rename(response=r_smooth) %>%
     dplyr::select(-r_orig, -n, -trial_name)
   dat.train.orig = dat.train %>% rename(response=r_orig) %>%
-    dplyr::select(-r_norm, -n, -trial_name)
-  return(list(norm=dat.train.norm, orig=dat.train.orig))
-}
-
-tidy_pretest <- function(df){
-  dat.pre <- df %>% filter(trial_name == "pretest") %>%
-    dplyr::select(prolific_id, question, response, id, trial_name, trial_number) %>%
-    mutate(prolific_id = factor(prolific_id), id=factor(id),
-           response = as.numeric(response),
-           trial_number = as.character(trial_number))
-  return(dat.pre)
+    dplyr::select(-r_smooth, -n, -trial_name)
+  return(list(smooth=dat.train.smooth, orig=dat.train.orig))
 }
 
 ## @arg experiment: "prior", "production", "joint" ##
@@ -172,12 +165,11 @@ tidy_data <- function(data, N_trials, experiment){
   } else {
     stop(paste(experiment, 'unknown'))
   }
-  dat.pretest <- tidy_pretest(df)
-  dat.all <- list(test=dat.test, train.norm=dat.train$norm,
+  dat.all <- list(test=dat.test, train.smooth=dat.train$smooth,
                   train.orig=dat.train$orig, color=dat.color_vision,
                   train.attention=dat.attention_check,
                   train.slider_choice=dat.slider_choice,
-                  info=dat.info, comments=dat.comments, pretest=dat.pretest)
+                  info=dat.info, comments=dat.comments)
 
   return(dat.all)
 }
@@ -227,13 +219,13 @@ standardize_color_groups_exp2 <- function(df){
   return(df)
 }
 
-# @arg df: data frame containing columns bg, b, g
+# @arg df: data frame containing columns bg, b, g, none
 add_probs <- function(df){
   df <- df %>% mutate(p_a=bg+b, p_c=bg+g, p_na=g+none, p_nc=b+none) %>%
-    mutate(p_c_given_a = if_else(p_a==0, 0, bg / p_a),
-           p_c_given_na = if_else(p_na==0, 0, g / p_na),
-           p_a_given_c = if_else(p_c==0, 0, bg / p_c),
-           p_a_given_nc = if_else(p_nc==0, 0, b / p_nc),
+    mutate(p_c_given_a = bg / p_a,
+           p_c_given_na = g / p_na,
+           p_a_given_c = bg / p_c, 
+           p_a_given_nc = b / p_nc, 
            p_nc_given_a = b/p_a,
            p_nc_given_na = none/p_na,
            p_na_given_c = g/p_c,
@@ -267,92 +259,49 @@ cluster_responses <- function(dat, quest){
   return(df)
 }
 
-filter_exp1 <- function(df){
-  # All 0 or all 1 responses: as one can't believe that all events will
-  # certainly (not) happen
-  filtered_sum <- df %>%
-    group_by(prolific_id, id) %>%
-    filter(sum(response) == 0 | sum(response) == 4)
-  
-  df_filltered <- df %>% filter(sum(response) != 0 & sum(response) != 4)
-  print(paste('filtered due to sum=4 or sum=0:', nrow(filtered_sum)))
-  return(df_filtered)
-}
-
 # @arg df1 in long-format
-add_normed_exp1 <- function(df1, test_or_train, epsilon=0.000001){
+# smooth slider ratings from prior elicitation experiment (exp1)
+add_smoothed_exp1 <- function(df1, test_or_train){
   data = df1 %>% group_by(prolific_id, id)
   df = data %>% filter(sum(response)!=0)
   zeros = (nrow(data) - nrow(df)) / 4
   message(paste("#datapoints filtered out as all 4 events rated as 0:", zeros))
   # normalize such that slider responses sum up to 1 but also keep original response
-  df.with_normed = df %>%
-    mutate(n=sum(response + epsilon), r_norm=(response + epsilon)/n) %>%
+  df.with_smoothed = df %>%
+    mutate(n=sum(response + epsilon), r_smooth=(response + epsilon)/n) %>%
     rename(r_orig=response)
   print(paste("in", test_or_train, "data"))
-  return(df.with_normed)
+  return(df.with_smoothed)
 }
 
 save_prob_tables <- function(df, result_dir, result_fn){
-  # Also save just Table means of normalized values as csv files
-  means <- df %>% group_by(id, question) %>% summarise(mean=mean(r_norm))
-  fn_table_means <- paste(result_fn, "_tables_mean.csv", sep="");
+  # Also save just Table means of smoothed values as csv files
+  means <- df %>% group_by(id, question) %>% summarise(mean=mean(r_smooth))
+  fn_table_means <- paste(result_fn, "_tables_smooth_mean.csv", sep="");
   path_table_means <- paste(result_dir, fn_table_means, sep=.Platform$file.sep);
   write.table(means %>% pivot_wider(names_from = question, values_from = mean),
               file=path_table_means, sep = ",", row.names=FALSE)
-  print(paste('written means of normalized probability tables to:', path_table_means))
+  print(paste('written means of smoothed probability tables to:', path_table_means))
   
-  # All Tables (with normalized values)
-  tables.all <- df %>% dplyr::select(id, question, prolific_id, r_norm) %>%
+  # Save all Tables (with smoothed values)
+  tables.all <- df %>% dplyr::select(id, question, prolific_id, r_smooth) %>%
     group_by(id, question, prolific_id) %>%
-    pivot_wider(names_from = question, values_from = r_norm)
-  fn_tables_all <- paste(result_fn, "_tables_all.csv", sep="");
+    pivot_wider(names_from = question, values_from = r_smooth) %>%
+    add_probs()
+  fn_tables_all <- paste(result_fn, "_tables_smooth.csv", sep="");
   path_tables_all <- paste(result_dir, fn_tables_all, sep=.Platform$file.sep);
   write.table(tables.all, file=path_tables_all, sep = ",", row.names=FALSE)
-  print(paste('written normalized probability tables to:', path_tables_all))
-  
-  # save smoothed version of all (normalized) tables as well
-  epsilon = 0.00001
-  tables.orig <- tables.all %>% rename(AC=bg, `A-C`=b, `-AC`=g, `-A-C`=none)
-  tables.mat = tables.orig %>% ungroup() %>%
-    dplyr::select(AC, `A-C`, `-AC`, `-A-C`) %>% as.matrix()
-  tables.smooth = prop.table(tables.mat + epsilon, 1)
-  tables.smooth = cbind(tables.smooth, rowid=seq.int(from=1, to=nrow(tables.mat), by=1)) %>%
-    as_tibble() %>% 
-    mutate(p_c_given_a=`AC`/(`AC`+`A-C`),
-           p_c_given_na=`-AC`/(`-AC`+`-A-C`),
-           p_a_given_c=`AC`/(`AC`+`-AC`),
-           p_a_given_nc=`A-C`/(`A-C`+`-A-C`),
-           p_a=`AC`+`A-C`, p_c=AC+`-AC`, 
-           theta_ac = (p_c_given_a - p_c_given_na) / (1 - p_c_given_na),
-           theta_anc = ((1-p_c_given_a) - (1-p_c_given_na)) / (1 - (1-p_c_given_na)),
-           theta_ca = (p_a_given_c - p_a_given_nc) / (1 - p_a_given_nc),
-           theta_cna = ((1-p_a_given_c) - (1-p_a_given_nc)) / (1 - (1-p_a_given_nc)),
-    );
-  TABLES = left_join(tables.smooth,
-    tables.orig %>% dplyr::select(id, prolific_id) %>% rowid_to_column(var="rowid"),
-    by="rowid"
-  ) %>% dplyr::select(-rowid)
-
-  TABLES.long = TABLES %>% rowid_to_column() %>%
-    mutate(ind_diff=AC-(p_a*p_c)) %>%
-    pivot_longer(cols=c(-prolific_id, -id), names_to="cell", values_to="val")
-  TABLES.mat = TABLES %>% as.matrix()
-  TABLES.ind = TABLES %>% filter(str_detect(id, "independent"))
-  TABLES.dep = TABLES %>% filter(!str_detect(id, "independent"))
-  TABLES.all = bind_rows(TABLES.ind, TABLES.dep)
-  
-  save_data(TABLES.ind, paste(result_dir, "empiric-ind-tables-smooth.rds", sep=fs))
-  save_data(TABLES.dep, paste(result_dir, "empiric-dep-tables-smooth.rds", sep=fs))
-  save_data(TABLES.all, paste(result_dir, "empiric-all-tables-smooth.rds", sep=fs))
+  print(paste('written smoothed probability tables to:', path_tables_all))
   
   # enrich empirical tables, fine-grained tables mapped to more coarse tables
-  tables.empiric.pids = TABLES.all %>%
-    mutate(AC=round(AC, 2), `A-C`=round(`A-C`,2),
-           `-AC`=round(`-AC`, 2), `-A-C`=round(`-A-C`, 2))  %>%
-    dplyr::select("AC", "A-C", "-AC", "-A-C", "prolific_id", "id") %>% 
-    unite("p_id", c(prolific_id, id)) %>% group_by(AC, `A-C`, `-AC`, `-A-C`) %>%
-    summarize(p_id=list(p_id)) %>% rowid_to_column("empirical_id")
+  tables.empiric.pids = tables.all %>%
+    dplyr::select("bg", "b", "g", "none", "prolific_id", "id") %>% 
+    unite("p_id", c(prolific_id, id)) %>% group_by(bg, b, g, none) %>%
+    summarize(p_id=list(p_id), .groups="keep") %>% ungroup() %>% 
+    mutate(bg.round=as.integer(round(bg,2)*100), b.round=as.integer(round(b,2)*100),
+           g.round=as.integer(round(g,2)*100), none.round=as.integer(round(none,2)*100)) %>%
+    distinct_at(vars(c(ends_with(".round"))), .keep_all = TRUE) %>% 
+    rowid_to_column("empirical_id")
   save_data(tables.empiric.pids, paste(result_dir, "tables-empiric-pids.rds", sep=fs))
 
   # to summarize the empirically generated tables, i.e.to make them more
@@ -361,14 +310,11 @@ save_prob_tables <- function(df, result_dir, result_fn){
   # normalize again to get well-defined probability distributions
   # for each empirical table, list all tables that would have been mapped to the
   # same table and check how many are then generated by the fitted prior distributions
-  tables.empiric.wide = tables.empiric.pids %>%
-    mutate(AC=round(AC*100,2), `A-C`=round(`A-C`*100,2),
-           `-AC`=round(`-AC`*100,2), `-A-C`=round(`-A-C`*100,2))
-  tables.emp.augmented=pmap_dfr(tables.empiric.wide %>%
-                                  dplyr::select(-p_id), function(...){
+  tables.emp.augmented=pmap_dfr(
+    tables.empiric.pids %>% dplyr::select(-p_id), function(...){
     row=tibble(...)
     row.long = row %>%
-      pivot_longer(cols=c(AC, `A-C`, `-AC`, `-A-C`),
+      pivot_longer(cols=c(bg.round, b.round, g.round, none.round),
                    names_to="cell", values_to="p") %>%
       mutate(mod = p %% 10)
     vals.augmented = pmap_dfr(row.long, function(...){
@@ -377,7 +323,7 @@ save_prob_tables <- function(df, result_dir, result_fn){
         vals = tibble(p=c(0, 1, 2))
       } else if(entry$p %in% c(98,99,100)){
         vals = tibble(p=c(98, 99, 100))
-      }else if(entry$mod %in% c(3,4,5,6,7)) {
+      } else if(entry$mod %in% c(3,4,5,6,7)) {
         vals = tibble(p=entry$p - entry$mod + c(3,4,5,6,7))
       } else if(entry$mod %in% c(8,9)){
         vals = tibble(p=entry$p - entry$mod + c(8,9, 10, 11, 12))
@@ -390,29 +336,36 @@ save_prob_tables <- function(df, result_dir, result_fn){
     # normalize new tables + make sure that distinct
     x = vals.augmented %>%
       pivot_wider(names_from="cell", values_from="p", values_fn = list)
-    y=expand.grid(AC=x$AC[[1]], `A-C`=x$`A-C`[[1]], `-AC`=x$`-AC`[[1]],
-                  `-A-C`=x$`-A-C`[[1]])
+    y=expand.grid(bg=x$bg.round[[1]], b=x$b.round[[1]], g=x$g.round[[1]],
+                  none=x$none.round[[1]])
     tables.expanded = prop.table(as.matrix(y+epsilon), 1) %>% as_tibble() %>%
-      mutate(AC=round(AC, 2), `A-C`=round(`A-C`, 2), `-AC`=round(`-AC`,2),
-             `-A-C`=round(`-A-C`, 2)) %>%
-      distinct() %>% add_column(empirical_id=row$empirical_id %>% unique());
+     mutate(bg.round=as.integer(round(bg, 2)*100), b.round=as.integer(round(b,2)*100),
+            g.round=as.integer(round(g,2)*100), none.round=as.integer(round(none,2)*100)) %>%
+      distinct_at(vars(ends_with(".round")), .keep_all = TRUE) %>%
+      add_column(empirical_id=row$empirical_id %>% unique());
     
     # due to normalization, original values might have changed more than we want
     tables = tables.expanded %>%
-      filter((AC*100 <= row$AC + 2 & (AC*100 >= row$AC-2)) & 
-               (`A-C`*100 <= row$`A-C` + 2 & (`A-C`*100 >= row$`A-C`-2)) &
-               (`-AC`*100 <= row$`-AC` + 2 & (`-AC`*100 >= row$`-AC`-2)) & 
-               (`-A-C`*100 <= row$`-A-C` + 2 & (`-A-C`*100 >= row$`-A-C`-2)))
-    
+      filter((bg*100 <= row$bg.round + 2 & (bg*100 >= row$bg.round-2)) & 
+               (b*100 <= row$b.round + 2 & (b*100 >= row$b.round-2)) &
+               (g*100 <= row$g.round + 2 & (g*100 >= row$g.round-2)) & 
+               (none*100 <= row$none.round + 2 & (none*100 >= row$none-2)))
     return(tables)
   })
   tables.emp.augmented = tables.emp.augmented %>%
-    distinct_at(vars(c(-empirical_id)), .keep_all = TRUE) %>% 
-    rowid_to_column("augmented_id")
+    distinct_at(vars(c(ends_with(".round"))), .keep_all = TRUE) %>% 
+    add_column(augmented=TRUE)
+  # merge augmented tables with original tables
+  tables.emp.all = bind_rows(
+    tables.empiric.pids %>% add_column(augmented=FALSE),
+    tables.emp.augmented
+  ) %>%
+    distinct_at(vars(c(ends_with(".round"))), .keep_all = TRUE) %>%
+    dplyr::select(-p_id) %>%
+    rowid_to_column("row_id")
   
-  save_data(tables.emp.augmented,
+  save_data(tables.emp.all,
             paste(result_dir, "tables-empiric-augmented.rds", sep=fs))
-
 }
 
 process_data <- function(data_dir, data_fn, result_dir, result_fn, debug_run,
@@ -422,7 +375,7 @@ process_data <- function(data_dir, data_fn, result_dir, result_fn, debug_run,
   # Further process TEST-trial data --------------------------------------------
   data <- dat.tidy$test
   if(name_exp == "prior"){
-    df <- add_normed_exp1(data, "test");
+    df <- add_smoothed_exp1(data, "test");
     df <- standardize_color_groups_exp1(df)
     save_prob_tables(df, result_dir, result_fn);
   } else if(name_exp == "production") {
@@ -430,7 +383,7 @@ process_data <- function(data_dir, data_fn, result_dir, result_fn, debug_run,
     df <- standardize_sentences(df)
   } else if (name_exp == "joint"){
     df1 <- data %>% filter(str_detect(trial_name, "multiple_slider"))
-    df1 <- add_normed_exp1(df1, "test");
+    df1 <- add_smoothed_exp1(df1, "test");
     df1 <- standardize_color_groups_exp1(df1)
     save_prob_tables(df1, result_dir, result_fn);
     df2 <- data %>% filter(str_detect(trial_name, "fridge_")) %>%
@@ -454,25 +407,39 @@ makeAndSaveModelTables = function(){
   tables.model = dat.model$tables
   
   tables.generated = tables.model %>%
-    mutate(AC=round(AC, 2), `A-C`=round(`A-C`,2),
-           `-AC`=round(`-AC`, 2), `-A-C`=round(`-A-C`, 2)) %>%
+    mutate(AC.round=as.integer(round(AC, 2) * 100),
+           `A-C.round`=as.integer(round(`A-C`,2) * 100),
+           `-AC.round`=as.integer(round(`-AC`, 2) * 100),
+           `-A-C.round`=as.integer(round(`-A-C`, 2) * 100)) %>%
     ungroup() %>% dplyr::select(-bn_id) %>% 
-    distinct_at(vars(-starts_with("logL_")), .keep_all = TRUE) %>% 
+    distinct_at(vars(-starts_with("logL_"), -AC, -`A-C`, -`-AC`, -`-A-C`),
+                .keep_all = TRUE) %>% 
     rowid_to_column("table_id")
-  tables.emp.augmented = readRDS(
-    here("data", "prolific", "results", "toy-blocks-pilot-2",
-         "tables-empiric-augmented.rds")
-  )
   
-  tables = left_join(tables.generated, tables.emp.augmented,
-                     by=c("AC", "A-C", "-AC", "-A-C")) %>% 
-    mutate(empirical = !is.na(empirical_id))
+  tables.emp.augmented = readRDS(paste(dat.model$params$dir_empiric,
+                                       "tables-empiric-augmented.rds", sep=fs)) %>%
+    rename(AC=bg, `A-C`=b, `-AC`=g, `-A-C`=none,
+           `AC.round`=bg.round, `A-C.round`=b.round,
+           `-AC.round`=g.round, `-A-C.round`=none.round)
   
-  df.tables = tables %>% dplyr::select(-augmented_id)
+  tables = left_join(tables.generated,
+                     tables.emp.augmented %>%
+                       dplyr::select(-augmented, -row_id),
+                     by=c("AC.round", "A-C.round", "-AC.round", "-A-C.round")) %>% 
+    mutate(empirical = !is.na(empirical_id)) %>% 
+    dplyr::select(-ends_with(".round"))
+  
+  t.emp = tables %>% filter(empirical) %>% dplyr::select(-ends_with(".x")) %>% 
+    rename(`AC.x`=`AC.y`, `A-C.x`=`A-C.y`, `-AC.x`=`-AC.y`, `-A-C.x`=`-A-C.y`)
+  t.gen_not_emp = tables %>% filter(!empirical) %>% dplyr::select(-ends_with(".y"))
+  df.tables = bind_rows(t.emp, t.gen_not_emp) %>% arrange(table_id) %>%
+    rename(AC=`AC.x`, `A-C`=`A-C.x`, `-AC`=`-AC.x`, `-A-C`=`-A-C.x`)
+  
   # save mapping of table-empirical ids
   tables.emp = df.tables %>% filter(empirical) %>%
     dplyr::select(-empirical, -starts_with("logL_"))
   save_data(tables.emp, dat.model$params$target_mapping)
+  
   tables.toWPPL = bind_cols(
     prop.table(
       df.tables %>%

@@ -130,9 +130,9 @@ plot_ratings_across_conditions = function(df, title){
 # and compute the average distance for this participant from all other participants.
 distancesResponses = function(df.prior, save_as=NA){
   df = df.prior %>% 
-    dplyr::select(prolific_id, id, r_norm, question) %>%
+    dplyr::select(prolific_id, id, r_smooth, question) %>%
     unite(col = "id_quest", "id", "question", remove=FALSE) %>%
-    rename(response=r_norm)
+    rename(response=r_smooth)
   
   distances <- tibble()
   for(proband in df.prior$prolific_id %>% unique()) {
@@ -180,9 +180,9 @@ distancesResponses = function(df.prior, save_as=NA){
 # Quality of the data squared diff to mean
 responsesSquaredDiff2Mean = function(df.prior){
   df = df.prior %>% 
-    dplyr::select(prolific_id, id, r_norm, question) %>%
+    dplyr::select(prolific_id, id, r_smooth, question) %>%
     unite(col = "id_quest", "id", "question", sep="--") %>%
-    rename(response=r_norm) %>% group_by(id_quest)
+    rename(response=r_smooth) %>% group_by(id_quest)
   mus = df %>% group_by(id_quest) %>%
     summarize(mu=mean(response), .groups="drop_last")
   dat = left_join(df, mus) %>%

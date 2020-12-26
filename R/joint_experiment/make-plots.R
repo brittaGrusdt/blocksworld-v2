@@ -33,26 +33,26 @@ df.wide = TABLES.dep %>%
   rowid_to_column()
 df.long = df.wide %>% 
   pivot_longer(cols=c(bg, b, g, none), names_to="question", values_to="response") 
-save_to = paste(PLOT.dir, "slider-ratings-densities", sep=SEP)
+save_to = paste(PLOT.dir, "slider-ratings-densities", sep=fs)
 if(!dir.exists(save_to)) {dir.create(save_to)}
 df.long %>%
   plotSliderDensities(questions.test, labels.test, target_dir=save_to)
 
-save_to = paste(PLOT.dir, "slider-ratings-boxplots", sep=SEP)
+save_to = paste(PLOT.dir, "slider-ratings-boxplots", sep=fs)
 if(!dir.exists(save_to)) {dir.create(save_to)}
 df.long %>% plotSliderRatings(questions.test, labels.test, cluster_by="bg",
                               relation=FALSE, target_dir=save_to)
 
 # Slider Ratings ----------------------------------------------------------
 # 1.unnormalized slider ratings with utterance and normalized ratings
-save_to = paste(PLOT.dir, "slider-ratings-tables", sep=SEP)
+save_to = paste(PLOT.dir, "slider-ratings-tables", sep=fs)
 if(!dir.exists(save_to)) {dir.create(save_to)}
 
 for(pid in pids) {
   df.pid.orig = df.orig %>% filter(prolific_id == (!! pid))
   df.pid.norm = df.norm %>% filter(prolific_id == (!! pid))
   
-  target_folder = paste(save_to, pid, sep=SEP) 
+  target_folder = paste(save_to, pid, sep=fs) 
   if(!exists(target_folder)){
     dir.create(target_folder)
   }
@@ -72,7 +72,7 @@ for(pid in pids) {
         labs(y="unnormalized slider rating", x="",title=stim_utt) +
         geom_point(aes(y=normalized), size=2, color='orange') +
         theme(axis.text.x=element_blank(), legend.position="none")
-      ggsave(paste(save_to, SEP, pid, SEP, stimulus, ".png", sep=""), p, width=12)
+      ggsave(paste(save_to, fs, pid, fs, stimulus, ".png", sep=""), p, width=12)
     }
   }
 }
@@ -91,7 +91,7 @@ p <- df %>%
   theme(text = element_text(size=20), legend.position="bottom") +
   labs(x="rated probability (prior elicitation)", y="response")
 
-ggsave(paste(PLOT.dir, "prior-vs-utt.png", sep=SEP), p, width=15)
+ggsave(paste(PLOT.dir, "prior-vs-utt.png", sep=fs), p, width=15)
 
 #Same plot, here results plotted separately for each participant. Stimuli are color coded.
 p <- df %>%
@@ -102,7 +102,7 @@ p <- df %>%
   theme_bw(base_size = 14) +
   theme(legend.position="none") +
   labs(x="rated probability (prior elicitation)", y="response")
-ggsave(paste(PLOT.dir, "prior-vs-utt-per-proband.png", sep=SEP), p, width=15, height=18)
+ggsave(paste(PLOT.dir, "prior-vs-utt-per-proband.png", sep=fs), p, width=15, height=18)
 
 
 ratios_large = df %>% group_by(prolific_id) %>%
@@ -114,17 +114,17 @@ ids.small = ratios_large %>% filter(ratio_large<0.7) %>% pull(prolific_id)
 # Slider Ratings
 # 2.normalized ratings with produced utterance
 fn = paste(PLOT.dir, "by-participants-normalized-ratings-with-production",
-           "large_beliefs", sep=SEP)
+           "large_beliefs", sep=fs)
 if(!dir.exists(fn)){dir.create(fn, recursive = TRUE)}
 plotSliderRatingsAndUtts(data.joint %>% filter(prolific_id %in% ids.large), fn)
 
 fn = paste(PLOT.dir, "by-participants-normalized-ratings-with-production",
-           "small_beliefs", sep=SEP)
+           "small_beliefs", sep=fs)
 if(!dir.exists(fn)){dir.create(fn, recursive = TRUE)}
 plotSliderRatingsAndUtts(data.joint %>% filter(prolific_id %in% ids.small), fn)
 
 # 3.unnormalized ratings with produced utterance
-# fn = paste(PLOT.dir, "by-participants-transformed-ratings-with-production", sep=SEP)
+# fn = paste(PLOT.dir, "by-participants-transformed-ratings-with-production", sep=fs)
 # if(!dir.exists(fn)){dir.create(fn)}
 # plotSliderRatingsAndUtts(data.joint.transformed, fn)
 
@@ -137,7 +137,7 @@ p = data.quality  %>%
   geom_jitter(height=0, width=0.05, alpha=0.4, size=1.5) +
   theme_bw(base_size = 20) +
   theme(axis.text.x=element_text(angle=90, vjust=0.5), legend.position="none")
-ggsave(paste(PLOT.dir, "quality-sum-sq-diff-to-mean.png", sep=SEP), p, width=15, height=10)
+ggsave(paste(PLOT.dir, "quality-sum-sq-diff-to-mean.png", sep=fs), p, width=15, height=10)
 
 
 # Train data --------------------------------------------------------------
@@ -189,9 +189,9 @@ plotTrainUncertain = function(fn) {
       geom_hline(aes(yintercept=1)) +
       labs(title=paste("trials uncertain block", fn)) +
       facet_wrap(~value, scales="free_y")
-    target = paste(PLOT.dir, "by-participants-train", fn, sep=SEP)
+    target = paste(PLOT.dir, "by-participants-train", fn, sep=fs)
     if(!dir.exists(target)) {dir.create(target, recursive = TRUE)}
-    ggsave(paste(target, paste(pid, "-", fn, ".png", sep=""), sep=SEP), height=8, width=10)
+    ggsave(paste(target, paste(pid, "-", fn, ".png", sep=""), sep=fs), height=8, width=10)
   }
 }
 
@@ -202,13 +202,13 @@ plotTrainUncertain("ramp")
 # Model-vs-human ----------------------------------------------------------
 plotModelAndBehavioral = function(use_fitted_tables){
   if(use_fitted_tables){
-    save_to = paste(PLOT.dir, "comparison-exp1-exp2-model", "fitted-tables", sep=SEP)
+    save_to = paste(PLOT.dir, "comparison-exp1-exp2-model", "fitted-tables", sep=fs)
     joint_data = data.behav_model.fitted.each
-    mapping = readRDS(paste(RESULT.dir, "mapping-tables-fitted-dirichlet-ids.rds", sep=SEP))
+    mapping = readRDS(paste(RESULT.dir, "mapping-tables-fitted-dirichlet-ids.rds", sep=fs))
     prior = readRDS(here("model", "results", "fitted-tables", "results-prior.rds")) %>%
-      dplyr::select(cn, table_id, prob) %>% distinct()
+      ungroup() %>% dplyr::select(cn, table_id, prob) %>% distinct()
   } else{
-    save_to = paste(PLOT.dir, "comparison-exp1-exp2-model", "theoretic-tables", sep=SEP)
+    save_to = paste(PLOT.dir, "comparison-exp1-exp2-model", "theoretic-tables", sep=fs)
     joint_data = data.behav_model.theoretic.each
     mapping = readRDS(here("model", "data", "mapping-tables-model-ids.rds"))
     prior = readRDS(here("model", "results", "theoretic-tables", "results-prior.rds")) %>%
@@ -220,7 +220,8 @@ plotModelAndBehavioral = function(use_fitted_tables){
     separate(p_id, into=c("pid", "stimulus", "prior"), sep="_") %>%
     unite("stimulus", c("stimulus", "prior"), sep="_") %>%
     filter(id==stimulus & prolific_id == pid) %>%
-    dplyr::select(-pid, -stimulus) %>% distinct()
+    dplyr::select(-pid, -stimulus, -cn) %>% distinct() %>%
+    mutate(utterance=factor(utterance, levels=levels.responses))
   
   df.ids = dat %>% dplyr::select(prolific_id, id, empirical_id) %>% distinct() %>%
     rowid_to_column("rowid")
@@ -231,22 +232,22 @@ plotModelAndBehavioral = function(use_fitted_tables){
     stimulus = df.ids[i,]$id
     df.row = dat %>% filter(prolific_id == (!! pid) & id == (!! stimulus)) %>%
       mutate(table_id=as.factor(table_id))
-    target_folder = paste(save_to, pid, sep=SEP) 
+    target_folder = paste(save_to, pid, sep=fs) 
     if(!dir.exists(target_folder)) dir.create(target_folder);
     
-    behavioral = df.row %>% dplyr::select(-table_id, -cn, -model.p) %>% distinct()
+    behavioral = df.row %>% dplyr::select(-table_id, -model.p) %>% distinct()
     behavioral.uttered = behavioral %>% filter(human_exp2==1) 
     table_ids = df.row$table_id %>% unique()
-    df.prior = prior %>% filter(table_id %in% table_ids) %>% distinct() %>%
-      group_by(table_id) %>%
+    df.prior = prior %>% filter(table_id == table_ids[1]) %>%
       mutate(table_id=as.factor(table_id), cn=as.factor(cn),
              s_prob=sum(prob), p=prob/s_prob)
     
-    p.prior = df.prior %>% ggplot(aes(y=p, x=table_id, fill=cn)) +
+    p.prior = df.prior %>% ggplot(aes(y=p, x=cn, fill=cn)) +
       geom_bar(stat="identity", position="dodge") +
       theme_classic(base_size = 20) +
-      theme(legend.position="right") +
-      labs(y="prior(cn)") 
+      theme(legend.position="none") +
+      labs(y="prior(cn|table)",
+           title=paste("table_id:", df.prior$table_id %>% unique)) 
     
     p.speaker = df.row %>% ggplot(aes(y=utterance)) + 
       geom_bar(data=behavioral, aes(x=human_exp1), stat="identity", color='grey') +
@@ -259,16 +260,15 @@ plotModelAndBehavioral = function(use_fitted_tables){
     
     p=plot_grid(p.speaker, p.prior, align = "h", nrow = 1, axis = "b",
               rel_widths = c(0.6, 0.4))
-    ggsave(paste(save_to, SEP, pid, SEP, stimulus, ".png", sep=""), height=17, width=20)
+    ggsave(paste(save_to, fs, pid, fs, stimulus, ".png", sep=""), height=12, width=20)
   }
 }
 
 # model predictions with theoretic/dirichlet-fitted tables
 plotModelAndBehavioral(use_fitted_tables = FALSE)
-plotModelAndBehavioral(use_fitted_tables = TRUE)
 
 
-# save_to = paste(PLOT.dir, "comparison-exp1-exp2-model", "theoretic-tables", sep=SEP)
+# save_to = paste(PLOT.dir, "comparison-exp1-exp2-model", "theoretic-tables", sep=fs)
 # if(!dir.exists(save_to)) {dir.create(save_to)}
 # 
 # dat = data.behav_model.theoretic.each %>% 
@@ -280,7 +280,7 @@ plotModelAndBehavioral(use_fitted_tables = TRUE)
 # df.ids = dat %>% dplyr::select(prolific_id, id, empirical_id) %>% distinct() %>%
 #   rowid_to_column("rowid")
 # 
-# mapping = readRDS(paste(RESULT.dir, "mapping-tables-ids.rds", sep=SEP))
+# mapping = readRDS(paste(RESULT.dir, "mapping-tables-ids.rds", sep=fs))
 # 
 
 
@@ -304,7 +304,7 @@ plotModelAndBehavioral(use_fitted_tables = TRUE)
 
 # Model -------------------------------------------------------------------
 path.results_model <- here("model", "data", "results-prior.rds")
-model.tables = readRDS(paste(RESULT.dir, "model-tables-stimuli.rds", sep=SEP)) %>%
+model.tables = readRDS(paste(RESULT.dir, "model-tables-stimuli.rds", sep=fs)) %>%
   dplyr::select(table_id, stimulus, empirical, vs, ps) %>% unnest(c(vs,ps)) %>%
   rename(id=stimulus)
 model.tables.wide = model.tables %>% pivot_wider(names_from="vs", values_from="ps")

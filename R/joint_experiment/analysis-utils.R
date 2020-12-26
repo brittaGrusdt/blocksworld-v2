@@ -102,35 +102,32 @@ RESULT.dir = here("data", "prolific", "results", exp.name)
 PLOT.dir = here("data", "prolific", "results", exp.name, "plots")
 if(!dir.exists(PLOT.dir)){dir.create(PLOT.dir, recursive=TRUE)}
 
-epsilon = 0.00001
-SEP = .Platform$file.sep
-
 # Experimental Data -------------------------------------------------------
-data <- readRDS(paste(RESULT.dir, SEP, exp.name, "_tidy.rds", sep=""));
+data <- readRDS(paste(RESULT.dir, fs, exp.name, "_tidy.rds", sep=""));
 data.info = data$info
 data.comments = data$comments
 data.color = data$color 
 
-data.production = readRDS(paste(RESULT.dir, "human-exp2.rds", sep=SEP));
-data.prior.norm = readRDS(paste(RESULT.dir, "human-exp1-normed.rds", sep=SEP))
-data.prior.orig = readRDS(paste(RESULT.dir, "human-exp1-orig.rds", sep=SEP))
-data.joint = readRDS(paste(RESULT.dir, "human-exp1-exp2.rds", sep=SEP))
-data.joint.orig = readRDS(paste(RESULT.dir, "human-orig-exp1-exp2.rds", sep=SEP))
+data.production = readRDS(paste(RESULT.dir, "human-exp2.rds", sep=fs));
+data.prior.smooth = readRDS(paste(RESULT.dir, "human-exp1-smoothed.rds", sep=fs))
+data.prior.orig = readRDS(paste(RESULT.dir, "human-exp1-orig.rds", sep=fs))
+data.joint.smooth = readRDS(paste(RESULT.dir, "human-exp1-smoothed-exp2.rds", sep=fs))
+data.joint.orig = readRDS(paste(RESULT.dir, "human-exp1-orig-exp2.rds", sep=fs))
 
-data.quality = readRDS(paste(RESULT.dir, SEP, "filtered_data", SEP,
+data.quality = readRDS(paste(RESULT.dir, fs, "filtered_data", fs,
                              "test-data-prior-quality.rds", sep=""))
-data.distances = readRDS(paste(RESULT.dir, "distances-quality.rds", sep=SEP))
+data.distances = readRDS(paste(RESULT.dir, "distances-quality.rds", sep=fs))
 
 # empirical tables (test-trials)
-TABLES.ind = readRDS(paste(RESULT.dir,"empiric-ind-tables-smooth.rds", sep=SEP)) %>%
-  filter(id != "ind2")
-TABLES.dep = readRDS(paste(RESULT.dir, "empiric-dep-tables-smooth.rds", sep=SEP))
-TABLES.all = bind_rows(TABLES.ind, TABLES.dep)
+# TABLES.ind = readRDS(paste(RESULT.dir,"empiric-ind-tables-smooth.rds", sep=fs)) %>%
+#   filter(id != "ind2")
+# TABLES.dep = readRDS(paste(RESULT.dir, "empiric-dep-tables-smooth.rds", sep=fs))
+# TABLES.all = bind_rows(TABLES.ind, TABLES.dep)
 
-data.train.norm = data$train.norm
+data.train.smooth = data$train.smooth
 data.train.orig = data$train.orig
 # for each participant only the last 50% of all train trials
-data.train.norm.half = data.train.norm %>% 
+data.train.smooth.half = data.train.smooth %>% 
   separate(id, into=c("trial.relation", "trial.idx"), sep=-1, remove=FALSE) %>%
   group_by(prolific_id, trial.relation) %>% arrange(desc(trial_number)) %>%
   top_frac(0.5, trial_number) %>% 
@@ -141,6 +138,7 @@ data.train.norm.half = data.train.norm %>%
 
 
 # Model Prediction Data ---------------------------------------------------
+# (speaker predictions joint with behavioral data)
 data.behav_model.fitted.across = readRDS(
   here("model", "results", "fitted-tables", "model-behavioral-across-table-ids.rds")
 )

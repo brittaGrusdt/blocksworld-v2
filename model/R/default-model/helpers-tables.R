@@ -210,10 +210,14 @@ analyze_tables <- function(path, theta, TABLES=tibble()){
                pcna = compute_cond_prob(TABLES.wide, "P(C|-A)") %>% pull(p) > theta,
                panc = compute_cond_prob(TABLES.wide, "P(A|-C)") %>% pull(p) > theta
               )
-  print(paste("P(C|A)", round(conditionals %>% filter(pca) %>% nrow / n.wide, 2)))
-  print(paste("P(A|C)", round(conditionals %>% filter(pac) %>% nrow / n.wide, 2)))
-  print(paste("P(C|-A)", round(conditionals %>% filter(pcna) %>% nrow / n.wide, 2)))
-  print(paste("P(-A|-C)", round(conditionals %>% filter(panc) %>% nrow / n.wide, 2)))
+  df.ifac = conditionals %>% filter(pca) %>% nrow()
+  df.ifca = conditionals %>% filter(pac) %>% nrow()
+  df.ifnac = conditionals %>% filter(pcna) %>% nrow()
+  df.ifncna = conditionals %>% filter(panc) %>% nrow()
+  print(paste("P(C|A)", df.ifac, "(", round(df.ifac / n.wide, 2), ")"))
+  print(paste("P(A|C)", df.ifca, "(", round(df.ifca / n.wide, 2), ")"))
+  print(paste("P(C|-A)", df.ifnac, "(", round(df.ifnac / n.wide, 2), ")"))
+  print(paste("P(-A|-C)", df.ifncna, "(", round(df.ifncna / n.wide, 2), ")"))
 
   print('#true likely+literal')
   literals <- TABLES.wide %>%
@@ -232,10 +236,14 @@ analyze_tables <- function(path, theta, TABLES=tibble()){
            c=`AC` + `-AC` > theta,
            na=`-AC` + `-A-C` > theta,
            nc=`A-C` + `-A-C` > theta)
-  print(paste("A", round(literals %>% filter(a) %>% nrow / n.wide, 2)))
-  print(paste("C", round(literals %>% filter(c) %>% nrow / n.wide, 2)))
-  print(paste("-A", round(literals %>% filter(na) %>% nrow / n.wide, 2)))
-  print(paste("-C", round(literals %>% filter(nc) %>% nrow / n.wide, 2)))
+  df.a = literals %>% filter(a) %>% nrow()
+  df.c = literals %>% filter(c) %>% nrow()
+  df.na = literals %>% filter(na) %>% nrow()
+  df.nc = literals %>% filter(nc) %>% nrow()
+  print(paste("A", df.a, "(", round(df.a / n.wide, 2), ")"))
+  print(paste("C", df.c, "(", round(df.c / n.wide, 2), ")"))
+  print(paste("-A", df.na, "(", round(df.na / n.wide, 2), ")"))
+  print(paste("-C", df.nc, "(", round(df.nc / n.wide, 2), ")"))
 }
 
 # associate tables with stimuli of experiment

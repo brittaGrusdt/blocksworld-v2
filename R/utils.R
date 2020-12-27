@@ -61,7 +61,8 @@ tidy_test_exp1 <- function(df){
 }
 
 tidy_test_exp2 <- function(df){
-  dat.test <- df %>% filter(startsWith(trial_name, "fridge_view") | trial_name == "fridge_train") %>%
+  dat.test <- df %>%
+    filter(startsWith(trial_name, "fridge_view") | trial_name == "fridge_train") %>%
     dplyr::select(prolific_id, RT, QUD, id, group, response1, response2, trial_name,
            trial_number) %>%
     rename(custom_response=response2, response=response1)
@@ -412,8 +413,7 @@ makeAndSaveModelTables = function(){
            `-AC.round`=as.integer(round(`-AC`, 2) * 100),
            `-A-C.round`=as.integer(round(`-A-C`, 2) * 100)) %>%
     ungroup() %>% dplyr::select(-bn_id) %>% 
-    distinct_at(vars(-starts_with("logL_"), -AC, -`A-C`, -`-AC`, -`-A-C`),
-                .keep_all = TRUE) %>% 
+    distinct_at(vars(c(ends_with(".round"))), .keep_all = TRUE) %>% 
     rowid_to_column("table_id")
   
   tables.emp.augmented = readRDS(paste(dat.model$params$dir_empiric,
@@ -422,40 +422,87 @@ makeAndSaveModelTables = function(){
            `AC.round`=bg.round, `A-C.round`=b.round,
            `-AC.round`=g.round, `-A-C.round`=none.round)
   
-  tables = left_join(tables.generated,
-                     tables.emp.augmented %>%
-                       dplyr::select(-augmented, -row_id),
-                     by=c("AC.round", "A-C.round", "-AC.round", "-A-C.round")) %>% 
-    mutate(empirical = !is.na(empirical_id)) %>% 
-    dplyr::select(-ends_with(".round"))
+  # check how many tables were sampled from fitted priors given augmented tables
+  tables.empiric.pids = readRDS(paste(dat.model$params$dir_empiric,
+                                      "tables-empiric-pids.rds", sep=fs)) %>%
+    rename(AC=bg, `A-C`=b, `-AC`=g, `-A-C`=none,
+           AC.round=`bg.round`, `A-C.round`=`b.round`,
+           `-AC.round`=`g.round`, `-A-C.round`=`none.round`)
   
-  t.emp = tables %>% filter(empirical) %>% dplyr::select(-ends_with(".x")) %>% 
-    rename(`AC.x`=`AC.y`, `A-C.x`=`A-C.y`, `-AC.x`=`-AC.y`, `-A-C.x`=`-A-C.y`)
-  t.gen_not_emp = tables %>% filter(!empirical) %>% dplyr::select(-ends_with(".y"))
-  df.tables = bind_rows(t.emp, t.gen_not_emp) %>% arrange(table_id) %>%
-    rename(AC=`AC.x`, `A-C`=`A-C.x`, `-AC`=`-AC.x`, `-A-C`=`-A-C.x`)
-  
-  # save mapping of table-empirical ids
-  tables.emp = df.tables %>% filter(empirical) %>%
-    dplyr::select(-empirical, -starts_with("logL_"))
-  save_data(tables.emp, dat.model$params$target_mapping)
-  
-  tables.toWPPL = bind_cols(
-    prop.table(
-      df.tables %>%
-        dplyr::select(-table_id, -empirical, -empirical_id, -cn,
-                      -starts_with("logL_")) %>%
-        as.matrix() + epsilon, 1
-    ) %>% as_tibble(),
-    df.tables %>% dplyr::select(table_id, empirical_id, empirical, cn,
-                                starts_with("logL_"))
+  tbls.emp.augmented = left_join(
+    tables.emp.augmented,
+    tables.empiric.pids %>% dplyr::select(empirical_id, p_id),
+    by=c("empirical_id")
   )
   
-  tables.toWPPL = tables.toWPPL %>%  group_by(table_id) %>% 
-    mutate(vs=list(c("AC", "A-C", "-AC", "-A-C")),
-           ps=list(c(`AC`, `A-C`, `-AC`, `-A-C`))) %>%
+  tbls = left_join(tables.generated, tbls.emp.augmented,
+                   by=c("AC.round", "A-C.round", "-AC.round", "-A-C.round")) %>% 
+    mutate(empirical = !is.na(empirical_id)) %>%
+    arrange(augmented)
+  empirical_in_tables = tbls %>% filter(empirical) %>%
+    pull(empirical_id) %>% unique()
+  length(empirical_in_tables) / nrow(tables.empiric.pids)
+  
+  # save mapping of table-empirical ids
+  # 1 empirical id --MAPS TO--> several table_ids
+  
+  # generated + empirical
+  tbls.gen.emp = tbls %>% filter(empirical) %>% group_by(empirical_id) %>% 
+    mutate(n=n(), s=sum(augmented), only_augmented=s==n) %>%
+    mutate(orig_table=case_when(augmented ~ FALSE, 
+                                TRUE ~ TRUE))
+  # generated + not empirical
+  tbls.gen.not_emp = tbls %>% filter(!empirical) %>%
+    dplyr::select(-ends_with(".y")) %>% 
+    rename(`AC`=`AC.x`, `A-C`=`A-C.x`, `-AC`=`-AC.x`, `-A-C`=`-A-C.x`) %>%
+    add_column(only_augmented=FALSE, orig_table=FALSE)
+  
+  # 1. use original empirical tables whenever possible, i.e. when match within 
+  # generated and empirical tables where augmented is false
+  # --> take table where augemented is false
+  
+  # generated + empirical + origianl
+  tbls.gen.emp.orig = tbls.gen.emp %>% filter(orig_table) %>% 
+    dplyr::select(-ends_with(".x")) %>% 
+    rename(`AC.x`=`AC.y`, `A-C.x`=`A-C.y`, `-AC.x`=`-AC.y`, `-A-C.x`=`-A-C.y`)
+  
+  # 2. but some generated tables match only with augmented empirical tables
+  # generated + empirical + not original
+  tbls.gen.emp.not_orig = tbls.gen.emp %>% filter(!orig_table) %>%
+    dplyr::select(-ends_with(".y"))
+  
+  tbls.gen.emp = bind_rows(tbls.gen.emp.orig, tbls.gen.emp.not_orig) %>%
+    rename(`AC`=`AC.x`, `A-C`=`A-C.x`, `-AC`=`-AC.x`, `-A-C`=`-A-C.x`) %>%
+    dplyr::select(-n, -s)
+  
+  # 3. merge again generated tables
+  tbls.gen.all = bind_rows(tbls.gen.emp, tbls.gen.not_emp) %>%
+    mutate(stimulus=cn)
+  
+  # 4. for generated tables from (2.) that match only with augmented empirical tables
+  # check what the original table was and also add this one
+  tbl_id.max = tbls.gen.all$table_id %>% unique() %>% length()
+  ids.aug = tbls.gen.emp %>% filter(only_augmented) %>% pull(empirical_id) %>% unique()
+  tbls.aug = tables.empiric.pids %>% filter(empirical_id %in% ids.aug) %>%
+    dplyr::select(-p_id) %>% add_column(orig_table=TRUE)
+  tbls.aug = tbls.aug %>%
+    add_column(table_id = seq(tbl_id.max+1, tbl_id.max+nrow(tbls.aug)),
+               row_id=NA_integer_, augmented = NA)
+  map.ids = tables.empiric.pids %>% dplyr::select(empirical_id, p_id)
+  tbls.aug = left_join(tbls.aug, map.ids, by=c("empirical_id"))  %>%
     add_column(stimulus="")
   
+  # add these tables to generated tables
+  tables.generated.all = bind_rows(tbls.gen.all, tbls.aug)
+  save_data(tables.generated.all, dat.model$params$target_mapping)
+  
+  tables.model = tables.generated.all %>%
+    dplyr::select(-row_id, -ends_with(".round"), -augmented, -only_augmented)
+  
+  tables.toWPPL = tables.model %>% 
+    group_by(table_id) %>% 
+    mutate(vs=list(c("AC", "A-C", "-AC", "-A-C")),
+           ps=list(c(`AC`, `A-C`, `-AC`, `-A-C`)))
   save_data(tables.toWPPL, dat.model$params$tables_empiric)
   return(tables.toWPPL)
 }

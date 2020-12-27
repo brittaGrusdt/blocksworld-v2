@@ -65,29 +65,7 @@ preparePriorElicitationData = function(test.prior, smoothed=TRUE){
   prior_responses = df.prior_responses %>%
     pivot_longer(cols=c("b", "g", "bg", "none", starts_with("p_")),
                  names_to="prob", values_to="val") %>%
-    mutate(utterance=
-             case_when(prob=="b" ~ standardized.sentences$b,
-                       prob=="g" ~ standardized.sentences$g,
-                       prob=="bg" ~ standardized.sentences$bg,
-                       prob=="none" ~ standardized.sentences$none,
-                       prob=="p_a" ~ "blue falls",
-                       prob=="p_c" ~ "green falls",
-                       prob=="p_na" ~ "blue does not fall",
-                       prob=="p_nc" ~ "green does not fall",
-                       prob=="p_c_given_a" ~ standardized.sentences$if_bg,
-                       prob=="p_c_given_na" ~ standardized.sentences$if_nbg,
-                       prob=="p_a_given_c" ~ standardized.sentences$if_gb,
-                       prob=="p_a_given_nc" ~ standardized.sentences$if_ngb,
-                       prob=="p_nc_given_a" ~ standardized.sentences$if_bng,
-                       prob=="p_nc_given_na" ~ standardized.sentences$if_nbng,
-                       prob=="p_na_given_c" ~ standardized.sentences$if_gnb,
-                       prob=="p_na_given_nc" ~ standardized.sentences$if_ngnb,
-                       prob=="p_likely_a" ~ "blue might fall",
-                       prob=="p_likely_na" ~ "blue might not fall",
-                       prob=="p_likely_c" ~ "green might fall",
-                       prob=="p_likely_nc" ~ "green might not fall",
-                       TRUE ~ NA_character_)
-    )
+    translate_probs_to_utts()
   
   exp1.human = prior_responses %>% dplyr::select(-group, -n) %>%
     rename(human_exp1=val, question=prob) %>% 

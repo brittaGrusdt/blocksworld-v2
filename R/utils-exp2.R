@@ -162,6 +162,34 @@ translate_utterances = function(speaker.model, group="bg"){
   return(df)
 }
 
+#@arg df: with columns 'utterance' and 'prob'
+translate_probs_to_utts = function(df){
+  dat = df %>% mutate(utterance=
+           case_when(prob=="b" ~ standardized.sentences$b,
+                     prob=="g" ~ standardized.sentences$g,
+                     prob=="bg" ~ standardized.sentences$bg,
+                     prob=="none" ~ standardized.sentences$none,
+                     prob=="p_a" ~ "blue falls",
+                     prob=="p_c" ~ "green falls",
+                     prob=="p_na" ~ "blue does not fall",
+                     prob=="p_nc" ~ "green does not fall",
+                     prob=="p_c_given_a" ~ standardized.sentences$if_bg,
+                     prob=="p_c_given_na" ~ standardized.sentences$if_nbg,
+                     prob=="p_a_given_c" ~ standardized.sentences$if_gb,
+                     prob=="p_a_given_nc" ~ standardized.sentences$if_ngb,
+                     prob=="p_nc_given_a" ~ standardized.sentences$if_bng,
+                     prob=="p_nc_given_na" ~ standardized.sentences$if_nbng,
+                     prob=="p_na_given_c" ~ standardized.sentences$if_gnb,
+                     prob=="p_na_given_nc" ~ standardized.sentences$if_ngnb,
+                     prob=="p_likely_a" ~ "blue might fall",
+                     prob=="p_likely_na" ~ "blue might not fall",
+                     prob=="p_likely_c" ~ "green might fall",
+                     prob=="p_likely_nc" ~ "green might not fall",
+                     TRUE ~ NA_character_)
+  )
+ return(dat)
+}
+
 plotProductionTrials <- function(df.production.means, target_dir, min=0,
                                  dat.prior_empirical=tibble()){
   ids = df.production.means$id %>% unique()
@@ -308,9 +336,12 @@ join_model_behavioral_data = function(dat.speaker, params){
   tables.empiric = readRDS(paste(params$dir_empiric, "tables-empiric-pids.rds",
                                  sep=.Platform$file.sep))
   pids = tables.empiric %>% ungroup() %>%
-    dplyr::select(-bg, -b, -g, -none) %>% unnest(c(p_id))
+    dplyr::select(-bg, -b, -g, -none, -ends_with(".round")) %>% unnest(c(p_id))
   
   mapping.ids = readRDS(params$tables_mapping) %>% group_by(empirical_id)
+  orig.tables = mapping.ids %>% filter(orig_table) %>%
+    dplyr::select(empirical_id, table_id, AC, `A-C`, `-AC`, `-A-C`,
+                  ends_with(".round"))
   
   # iterate through all empirical ids, and note all table_ids that are associated 
   # with that empirical id (as there are several since empirical tables were augmented)
@@ -320,7 +351,7 @@ join_model_behavioral_data = function(dat.speaker, params){
   table_map = mapping.ids %>% group_by(empirical_id) %>%
     summarize(table_ids=list(table_id), .groups="drop_last")
   
-  df = data.model %>% ungroup() %>% dplyr::select(table_id) %>% unique()
+  df = data.model %>% ungroup() %>% dplyr::select(table_id) %>% distinct() 
   mapping=map_dfr(empirical_ids, function(id){
     current = table_map %>% filter(empirical_id == id)
     if(nrow(current) != 0){
@@ -332,15 +363,18 @@ join_model_behavioral_data = function(dat.speaker, params){
     }
     return(dat)
   });
-  predictions = data.model %>% dplyr::select(-AC, -`A-C`, -`-AC`, -`-A-C`)
-  ids = left_join(mapping, pids)
-  
-  res.model = left_join(predictions, ids) %>% filter(!is.na(empirical_id)) %>%
-    group_by(empirical_id) %>% dplyr::select(-stimulus) %>%
+  predictions = data.model %>% ungroup() %>% 
+    dplyr::select(-AC, -`A-C`, -`-AC`, -`-A-C`, -stimulus, -cn) %>%
+    group_by(table_id)
+  ids = left_join(mapping, pids) %>% group_by(empirical_id)
+
+  res.model = left_join(predictions, ids, by=c("table_id")) %>%
+    group_by(empirical_id) %>%
     rename(response=utterance) %>%
     translate_utterances() %>% group_by(empirical_id)
 
   # 2. behavioral data
+  # add empirical-ids to behavioral data (based on prolific_id + id)
   emp_ids = ids %>% dplyr::select(empirical_id, p_id) %>% distinct() %>%
     separate(p_id, into=c("prolific_id", "stimulus", "prior"), sep="_") %>%
     unite("id", c(stimulus, prior), sep="_")
@@ -350,30 +384,47 @@ join_model_behavioral_data = function(dat.speaker, params){
   res.behavioral = left_join(data.joint, emp_ids, by=c("prolific_id", "id")) %>%
     filter(!is.na(empirical_id)) %>% group_by(empirical_id)
 
-  # 3. merge empirical data from task1 + task2 with model data
+  # 3. merge empirical data with model data
   # 3.1 average across table_ids that map to same empirical id to get one
-  # model predictionfor each empirical id
+  # model prediction for each empirical id
   res.per_empirical.model = res.model %>%
-    group_by(cn, empirical_id, response) %>%
+    group_by(empirical_id, response) %>%
     summarize(probs=mean(probs), .groups="drop_last") %>%
     rename(utterance=response, model.p=probs)
   
   data.human_model_across = left_join(res.behavioral, res.per_empirical.model,
                                       by=c("empirical_id", "utterance")) %>% 
-    group_by(empirical_id)
+    group_by(empirical_id, prolific_id, id)
   save_data(data.human_model_across,
             paste(params$target_dir, "model-behavioral-across-table-ids.rds",
                   sep=.Platform$file.sep))
+  
   # 3.2 each table_id seperately, i.e. more than one prediction per empirical id
-  data.human_model_each = left_join(
+  # mark original tables s.t. they can be highlighted in plots!
+  orig.ids = orig.tables$table_id
+  human_model_each = left_join(
     res.behavioral, res.model %>% rename(utterance=response, model.p=probs),
     by=c("empirical_id", "utterance")
-  ) %>% group_by(empirical_id)
+  ) %>% group_by(empirical_id, prolific_id, id, table_id, p_id) %>%
+    mutate(orig.table=case_when(table_id %in% orig.ids ~ TRUE,
+                                TRUE ~ FALSE)) %>%
+    ungroup() %>%  dplyr::select(-p_id) %>% distinct()
+  
+  model.tables = mapping.ids %>%
+    dplyr::select(table_id, empirical_id, AC, `A-C`, `-AC`, `-A-C`) %>%
+    rename(bg=AC, b=`A-C`, g=`-AC`, none=`-A-C`) %>% add_probs() %>% 
+    group_by(table_id) %>% 
+    pivot_longer(cols=c(bg, b, g, none, starts_with("p_")),
+                 names_to="utterance", values_to="response") %>%
+    rename(prob=utterance) %>% translate_probs_to_utts() %>% 
+    rename(`model.table`= response) %>% dplyr::select(-prob, -empirical_id)
+    
+  data.human_model_each = left_join(
+    human_model_each, model.tables,
+    by=c("table_id", "utterance")
+  )
   save_data(data.human_model_each,
             paste(params$target_dir, "model-behavioral-each-table-id.rds",
                   sep=.Platform$file.sep))
-  
   return(data.human_model_each)
 }
-  # res.per_empirical.model.best = res.per_empirical.model %>% best_utt();
-

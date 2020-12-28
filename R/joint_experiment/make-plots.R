@@ -244,37 +244,56 @@ plotModelAndBehavioral = function(use_fitted_tables){
       dplyr::select(-table_id, -model.p, -model.table, -orig.table) %>% distinct()
     behavioral.uttered = behavioral %>% filter(human_exp2==1) 
     table_ids = df.row$table_id %>% unique()
-    df.prior = prior %>% filter(table_id == table_ids[1]) %>%
+    df.prior = prior %>% filter(table_id %in% table_ids) %>%
+      group_by(table_id) %>%
       mutate(table_id=as.factor(table_id), cn=as.factor(cn),
-             s_prob=sum(prob), p=prob/s_prob)
-    
-    p.prior = df.prior %>% ggplot(aes(y=p, x=cn, fill=cn)) +
-      geom_bar(stat="identity", position="dodge") +
+             s_prob=sum(prob), p=prob/s_prob) 
+      
+    p.prior = df.prior %>% filter() %>% 
+      ggplot(aes(y=prob, x=table_id, fill=cn)) +
+      geom_bar(stat="identity", position=position_dodge()) +
       theme_classic(base_size = 20) +
-      theme(legend.position="none") +
-      labs(y="prior(cn|table)",
-           title=paste("table_id:", df.prior$table_id %>% unique)) 
+      theme(legend.position="bottom") +
+      labs(y="prior(cn, table)")
     
-    p.speaker = behavioral %>% 
-      ggplot(aes(y=utterance)) + 
+    ggsave(paste(save_to, fs, pid, fs, stimulus, "-prior", ".png", sep=""),
+           p.prior, height=12, width=20)
+    
+    p.speaker = behavioral %>%
+      ggplot(aes(y=utterance)) +
       geom_bar(data=behavioral, aes(x=human_exp1), stat="identity", color='grey') +
-      geom_point(data=df.row, aes(x=model.p, color=table_id)) +
-      geom_point(data=behavioral.uttered, aes(x=human_exp2), color='orange',
-                 size=4, shape=18) +
+      geom_point(data=df.row %>%
+                   filter(model.p > 0), aes(x=model.p, color=table_id),
+                 size=6) +
+      geom_point(data=behavioral.uttered, aes(x=human_exp2, shape=utterance),
+                 color='orange', size=8) +
       theme_classic(base_size=20) +
       theme(legend.position="bottom") +
-      labs(x="model prediction/behavioral exp1", title="")
-    
+      geom_vline(aes(xintercept=0.8), color="gray", linetype="solid", size=1,
+                 show.legend=FALSE)
     tbl.orig = df.row %>% filter(orig.table)
     if(tbl.orig %>% nrow() != 0){
-      p.speaker = p.speaker + 
-        geom_point(data=tbl.orig, aes(x=model.p, color=table_id),
-                   shape=8, size=4)
+      p.speaker = p.speaker +
+        geom_point(data=tbl.orig, aes(x=model.p, color=table_id, shape=orig.table),
+                   size=6) +
+      scale_shape_manual(
+        name="", values = c(8, rep(18, length(levels.responses))),
+        breaks=c(TRUE, levels.responses),
+        labels=c("prediction for exact empirical table", rep("utterance participant",
+                  length(levels.responses)))
+      )
+    } else {
+      p.speaker = p.speaker +
+        scale_shape_manual(
+          name="", values = rep(18, length(levels.responses)),
+          breaks=levels.responses,
+          labels=rep("utterance participant", length(levels.responses))
+        )
     }
-    
-    p=plot_grid(p.speaker, p.prior, align = "h", nrow = 1, axis = "b",
-              rel_widths = c(0.6, 0.4))
-    ggsave(paste(save_to, fs, pid, fs, stimulus, ".png", sep=""), height=12, width=20)
+    # p=plot_grid(p.speaker, p.prior, align = "h", nrow = 1, axis = "b",
+    #           rel_widths = c(0.6, 0.4))
+    ggsave(paste(save_to, fs, pid, fs, stimulus, ".png", sep=""), p.speaker,
+           height=12, width=20)
   }
 }
 

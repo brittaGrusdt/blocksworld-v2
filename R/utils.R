@@ -506,3 +506,38 @@ makeAndSaveModelTables = function(){
   save_data(tables.toWPPL, dat.model$params$tables_empiric)
   return(tables.toWPPL)
 }
+
+# Model predictions different levels
+load_model_data = function(fn_tables) {
+  prior = readRDS(here("model", "results", fn_tables, "results-prior.rds")) %>% 
+    dplyr::select(-bn.stimulus, -bias, -starts_with("p_"))
+  
+  prior.wide = prior %>% pivot_wider(names_from="cell", values_from="val") %>%
+    ungroup() %>% dplyr::select(-level)
+  
+  speaker = readRDS(here("model", "results", fn_tables, "results-speaker.rds")) %>%
+    dplyr::select(-starts_with("p_"), -stimulus, -bias) %>%
+    mutate(AC=round(AC, 2), `A-C`=round(`A-C`, 2), `-AC`=round(`-AC`, 2),
+           `-A-C`=round(`-A-C`, 2))
+  
+  # ll = readRDS(here("model", "results", fn_tables, "results-LL.rds")) %>%
+  #   dplyr::select(-starts_with("p_"), -bn.stimulus, -bias) %>%
+  #   mutate(val=round(val, 2)) %>%
+  #   pivot_wider(names_from="cell", values_from="val") %>%
+  #   ungroup() %>% dplyr::select(-level)
+  
+  pl = readRDS(here("model", "results", fn_tables, "results-PL.rds")) %>%
+    dplyr::select(-starts_with("p_"), -bn.stimulus, -bias) %>%
+    mutate(val=round(val, 2)) %>%
+    pivot_wider(names_from="cell", values_from="val") %>%
+    ungroup() %>% dplyr::select(-level)
+  
+  # tables = readRDS(here("model", "data", "tables-model-empirical.rds"))  %>%
+  #   dplyr::select(-starts_with("logL_"), -cn, -vs, -ps, -stimulus) %>% 
+  #   rename(bg=`AC`, b=`A-C`, g=`-AC`, none=`-A-C`) %>% 
+  #   add_probs() %>%
+  #   dplyr::select(-starts_with("p_likely"))
+  # 
+  
+  return(list(pl=pl, speaker=speaker, prior=prior.wide))
+}

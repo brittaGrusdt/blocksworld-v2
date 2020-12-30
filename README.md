@@ -61,7 +61,7 @@ predictions from the model with participants' ratings, we have two options:
   * we use the set of tables sampled from the theoretically assumed
   distributions for each of the causal nets.
 
-Then we check how many of the empirical tables (including the augmented tables as described above) are included in the respective set of generated tables (In our pilot experiment roughly 60% for both).
+Then we check how many of the empirical tables (including the augmented tables as described above) are included in the respective set of generated tables (In our pilot experiment approx. 61% and 65% for theoretic/fitted tables, whereas only 12% and 29% resp. when considering exact same tables).
 
 ### Model
 

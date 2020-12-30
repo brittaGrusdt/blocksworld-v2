@@ -153,6 +153,10 @@ data.behav_model.theoretic.each = readRDS(
   here("model", "results", "theoretic-tables", "model-behavioral-each-table-id.rds")
 )
 
+tbls.theoretic = readRDS(here("model", "data", "mapping-tables-model-ids.rds"))
+tbls.fitted = readRDS(
+  paste(RESULT.dir, "mapping-tables-fitted-dirichlet-ids.rds", sep=fs)
+)
 
 # Other -------------------------------------------------------------------
 # ordered by informativity

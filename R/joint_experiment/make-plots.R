@@ -301,10 +301,163 @@ plotModelAndBehavioral = function(use_fitted_tables){
 plotModelAndBehavioral(use_fitted_tables = FALSE)
 plotModelAndBehavioral(use_fitted_tables = TRUE)
 
+# Plot means per table_id and stimulus 
+plotAveragePredictions = function(use_fitted_tables, best){
+  if(use_fitted_tables){
+    data = data.behav_model.fitted.each
+    tbls = tbls.fitted
+  } else {
+    data = data.behav_model.theoretic.each
+    tbls = tbls.theoretic 
+  }
+  tables = tbls %>% filter(orig_table) %>%
+    dplyr::select(AC, `A-C`, `-AC`, `-A-C`, table_id, empirical_id, p_id) %>%
+    unnest(c(p_id)) %>%
+    separate("p_id", into=c("prolific_id", "id", "prior"), sep="_") %>%
+    dplyr::select(-prolific_id) %>%
+    distinct_at(vars(c(table_id)), .keep_all = TRUE) %>% 
+    unite("stimulus", c("id", "prior")) %>% group_by(stimulus) %>%
+    rename(bg=AC, b=`A-C`, g=`-AC`, none=`-A-C`) %>%
+    add_probs() %>%
+    pivot_longer(cols=c(starts_with("p_"), "bg", "b", "g", "none"), 
+                 names_to="prob", values_to="response") %>%
+    translate_probs_to_utts() %>%
+    mutate(utterance=factor(utterance, levels=levels.responses),
+           table_id=as.factor(table_id), empirical_id=as.factor(empirical_id))
+  
+  dat = data %>%
+    group_by(id, empirical_id, utterance) %>% 
+    mutate(human_exp2 = case_when(is.na(human_exp2) ~ 0, 
+                                  TRUE ~ 1))
+  dat.long = dat %>%
+    pivot_longer(cols=c(model.p, human_exp2), names_to="predictor", values_to="prediction") %>% 
+    group_by(id, predictor, utterance) %>%
+    summarize(mean=mean(prediction), .groups="drop_last") %>%
+    mutate(utterance=factor(utterance, levels=levels.responses))
+  
+  for(stimulus in stimuli){
+    df = dat.long %>% filter(id == stimulus & mean > 0) %>%
+      arrange(desc(mean))
+    if(best){
+      df.behav = df %>% filter(predictor == "human_exp2")
+      df.model = df %>% filter(predictor == "model.p")
+      df = bind_rows(df.behav[1:2, ], df.model[1:2, ])
+    }
+    
+    tbls.stim = tables %>% filter(stimulus == (!! stimulus))
+    tbls.stim.mean = tbls.stim %>% group_by(utterance) %>%
+      summarize(response=mean(response), .groups="drop_last")
+    
+    # p.prior = tbls.stim %>% 
+    #   ggplot(aes(y=utterance, x=response, fill=empirical_id)) +
+    #   geom_bar(stat="identity", position=position_dodge()) +
+    #   # scale_fill_grey() +
+    #   geom_vline(aes(xintercept=0.8)) +
+    #   geom_bar(dat=tbls.stim.mean, fill='red', stat="identity", alpha=0.4) +
+    #   theme_bw(base_size = 20) +
+    #   labs(x="prior response") 
+    # 
+    # ggsave(paste(target_dir, fs, paste(stimulus, "-prior-entries.png", sep="")
+    #              , sep=""), p.prior, height=12, width=20)
+    # 
+    p = df %>%   
+      ggplot(aes(x=mean, y=utterance, fill=predictor)) +
+      geom_bar(stat="identity", position=position_dodge()) +
+      theme_bw(base_size=20) +
+      theme(legend.position="bottom") +
+      labs(x="ratio participants/average model prediction", 
+           title=stimulus)
+    fn = ifelse(use_fitted_tables, "fitted-tables", "theoretic-tables")
+    fn = ifelse(best, paste(fn, "best", sep="-"), fn)
+    target_dir = paste(PLOT.dir, fs, "comparison-exp1-exp2-model", fs, fn, sep="")
+    target_fn = paste(stimulus, ".png", sep="")
+    if(!dir.exists(target_dir)){dir.create(target_dir)}
+    ggsave(paste(target_dir, fs, target_fn, sep=""), p, height=12, width=20)
+  }
+}
+plotAveragePredictions(use_fitted_tables = FALSE, best=FALSE)
+plotAveragePredictions(use_fitted_tables = TRUE, best=FALSE)
+
+plotAveragePredictions(use_fitted_tables = FALSE, best=TRUE)
+plotAveragePredictions(use_fitted_tables = TRUE, best=TRUE)
 
 
 
-# Model -------------------------------------------------------------------
+
+
+
+
+
+# Following code needs to be tidied up!
+
+# Model-theoretic-tables --------------------------------------------------
+tbls.empiric = readRDS(paste(RESULT.dir, "tables-empiric-pids.rds", sep=fs))
+theta=0.8
+
+joint_data = data.behav_model.theoretic.each
+
+p = here("model", "data", "tables-model-empirical.rds")
+tbls.theoretic = readRDS(p) %>% dplyr::select(-starts_with("logL")) %>%
+  dplyr::select(-empirical, -orig_table, -vs, -ps, -p_id, -stimulus)
+df.best = joint_data %>% group_by(table_id, prolific_id, id) %>% 
+  mutate(best.utt= model.p== max(model.p)) %>% filter(best.utt)
+
+df = df.best %>% 
+  filter(model.p > 0 & str_detect(utterance, "if") & 
+         str_detect(id, "independent") & human_exp1 > theta) %>%
+  group_by(prolific_id, id) %>% arrange(desc(model.p)) %>%
+  distinct_at(vars(c(prolific_id, id)), .keep_all = TRUE)
+
+df = joint_data %>% 
+  filter(model.p > 0 & str_detect(utterance, "if") & 
+           str_detect(id, "independent") & human_exp1 > theta) %>%
+  group_by(prolific_id, id) %>% arrange(desc(model.p)) %>%
+  distinct_at(vars(c(prolific_id, id)), .keep_all = TRUE)
+
+x=df[3,]
+
+tbls.theoretic %>% filter(table_id==x$table_id)
+tbls.empiric %>% filter(empirical_id == x$empirical_id)
+
+
+# Model-fitted-tables -----------------------------------------------------
+
+joint_data = data.behav_model.fitted.each
+p = here("data", "prolific","results", "toy-blocks-pilot-2",
+         "tables-fitted-dirichlet-empirical.rds")
+tbls.fiited = readRDS(p) %>% dplyr::select(-starts_with("logL")) %>%
+  dplyr::select(-empirical, -orig_table, -vs, -ps, -p_id, -stimulus)
+df.best = joint_data %>% group_by(table_id, prolific_id, id) %>% 
+  mutate(best.utt= model.p== max(model.p)) %>% filter(best.utt)
+
+theta=0.8
+df = df.best %>% 
+  filter(model.p > 0 & str_detect(utterance, "if") & 
+           str_detect(id, "independent") & human_exp1 > theta) %>%
+  group_by(prolific_id, id)
+
+df = joint_data %>% 
+  filter(model.p > 0 & str_detect(utterance, "if") & 
+           str_detect(id, "independent") & human_exp1 > theta) %>%
+  group_by(prolific_id, id) %>% arrange(desc(model.p)) %>%
+  distinct_at(vars(c(prolific_id, id)), .keep_all = TRUE)
+
+x=df[3,]
+
+tbls.fitted %>% filter(table_id==x$table_id)
+tbls.empiric %>% filter(empirical_id == x$empirical_id)
+
+
+
+
+
+
+
+
+
+
+
+# Model Tables ---------------------------------------------------------------
 path.results_model <- here("model", "data", "results-prior.rds")
 model.tables = readRDS(paste(RESULT.dir, "model-tables-stimuli.rds", sep=fs)) %>%
   dplyr::select(table_id, stimulus, empirical, vs, ps) %>% unnest(c(vs,ps)) %>%
@@ -348,12 +501,39 @@ df.certain_both %>% group_by(bn.stimulus) %>% summarize(sum_p = sum(prob)) %>%
 
 
 # model tables
-# p = "/home/britta/UNI/Osnabrueck/MA-project/conditionals/data/tables-10000-(in)dependent.rds"
-p = "/home/britta/UNI/Osnabrueck/prob-modeling-conditionals/data/default-model/tables-default.rds"
-tables.theoretic = readRDS(p) %>% dplyr::select(-starts_with("logL"), -seed) %>%
-  group_by(id)
+p = here("model", "data", "tables-model.rds")
+theta = 0.8
+tables.theoretic = readRDS(p) %>% dplyr::select(-starts_with("logL")) %>%
+  mutate(blue=AC+`A-C`, green=`-AC` + AC)
+# uncertain and no literal is applicable
+tbls.unc = tables.theoretic %>%
+  filter(((blue > 0.4 & blue < 0.6) | (green > 0.4 & green < 0.6)) &
+          !(blue >= theta) & !(green >= theta) &
+           !(blue <= 1-theta) & !(green <= 1-theta)) %>%
+  pivot_longer(cols=c(AC, `A-C`, `-AC`, `-A-C`), names_to="vs", values_to="ps")
 
-analyze_tables("", 0.9, tables.theoretic %>% unnest(c(vs,ps)))
+analyze_tables("", theta, tbls.unc)
 
+analyze_tables("", theta, tbls.unc %>% filter(cn == "A || C"))
+analyze_tables("", theta, tbls.unc %>% filter(cn != "A || C"))
+
+data.model = load_model_data(fn_tables="theoretic-tables")
+data.model = load_model_data(fn_tables="fitted-tables")
+
+prior = data.model$prior %>%
+  mutate(cn=case_when(cn=="A || C" ~ cn,
+                      TRUE ~ "dependent")) %>% 
+  group_by(cn)
+
+# uncertain and no literal is applicable
+prior.unc = prior %>%
+  mutate(blue=AC+`A-C`, green=`-AC` + AC) %>% 
+  filter(((blue > 0.4 & blue < 0.6) | (green > 0.4 & green < 0.6)) &
+         !(blue >= theta) & !(green >= theta) & !(blue <= 1-theta) & !(green <= 1-theta))
+
+prior %>% summarize(s=sum(prob), .groups="drop") %>%
+  pivot_wider(names_from="cn", values_from="s") %>% mutate(fct=dependent/`A || C`)
+prior.unc %>% summarize(s=sum(prob), .groups="drop") %>%
+  pivot_wider(names_from="cn", values_from="s") %>% mutate(fct=dependent/`A || C`)
 
 

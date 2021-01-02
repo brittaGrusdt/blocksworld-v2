@@ -1,56 +1,56 @@
 library(cowplot)
+library(ggpubr)
 source("R/joint_experiment/analysis-utils.R")
 
 pids = data.joint.orig %>% pull(prolific_id) %>% unique()
 stimuli =  data.prior.orig %>% pull(id) %>% unique()
 
-getData =function(normalized=TRUE){
-  if(normalized){
-    df=data.joint
-  } else {
-    df = data.joint.orig
-  }
-  df = df %>%
-    mutate(question = case_when(utterance==standardized.sentences$bg ~ "bg",
-                                utterance==standardized.sentences$b ~ "b",
-                                utterance==standardized.sentences$g ~ "g",
-                                utterance==standardized.sentences$none ~ "none", 
-                                TRUE ~ utterance)) %>%
-    filter((question %in% questions.test) |
-             !is.na(human_exp2))
-  return(df)
-}
-df.norm = getData()
-df.orig = getData(normalized=FALSE)
-
-
+df.orig = data.joint.orig %>% 
+  mutate(question = case_when(utterance==standardized.sentences$bg ~ "bg",
+                               utterance==standardized.sentences$b ~ "b",
+                               utterance==standardized.sentences$g ~ "g",
+                               utterance==standardized.sentences$none ~ "none", 
+                               TRUE ~ utterance))
+df.smooth = data.joint.smooth %>%
+  mutate(question = case_when(utterance==standardized.sentences$bg ~ "bg",
+                               utterance==standardized.sentences$b ~ "b",
+                               utterance==standardized.sentences$g ~ "g",
+                               utterance==standardized.sentences$none ~ "none", 
+                               TRUE ~ utterance))
+  
 # summary slider-ratings ----------------------------------------------------
-df.wide = TABLES.dep %>% 
-  # filter(prolific_id %in% pids.false_colors) %>%
+tables.smooth = data.joint.smooth %>%
+  dplyr::select(-human_exp2) %>% distinct() %>% 
+  mutate(utterance = case_when(utterance==standardized.sentences$bg ~ "bg",
+                              utterance==standardized.sentences$b ~ "b",
+                              utterance==standardized.sentences$g ~ "g",
+                              utterance==standardized.sentences$none ~ "none", 
+                              TRUE ~ utterance)) %>%
+  filter((utterance %in% questions.test)) %>%
+  pivot_wider(names_from="utterance", values_from="human_exp1") %>%
   group_by(prolific_id, id) %>%
-  rename(bg=AC, b=`A-C`, g=`-AC`, none=`-A-C`) %>%
-  select(bg, b, g, none, prolific_id, id) %>%
   rowid_to_column()
-df.long = df.wide %>% 
+
+tables.long = tables.smooth %>% 
   pivot_longer(cols=c(bg, b, g, none), names_to="question", values_to="response") 
 save_to = paste(PLOT.dir, "slider-ratings-densities", sep=fs)
 if(!dir.exists(save_to)) {dir.create(save_to)}
-df.long %>%
+tables.long %>%
   plotSliderDensities(questions.test, labels.test, target_dir=save_to)
 
 save_to = paste(PLOT.dir, "slider-ratings-boxplots", sep=fs)
 if(!dir.exists(save_to)) {dir.create(save_to)}
-df.long %>% plotSliderRatings(questions.test, labels.test, cluster_by="bg",
+tables.long %>% plotSliderRatings(questions.test, labels.test, cluster_by="bg",
                               relation=FALSE, target_dir=save_to)
 
 # Slider Ratings ----------------------------------------------------------
-# 1.unnormalized slider ratings with utterance and normalized ratings
+# 1.slider ratings with utterance and normalized ratings
 save_to = paste(PLOT.dir, "slider-ratings-tables", sep=fs)
 if(!dir.exists(save_to)) {dir.create(save_to)}
 
 for(pid in pids) {
   df.pid.orig = df.orig %>% filter(prolific_id == (!! pid))
-  df.pid.norm = df.norm %>% filter(prolific_id == (!! pid))
+  df.pid.smooth = df.smooth %>% filter(prolific_id == (!! pid))
   
   target_folder = paste(save_to, pid, sep=fs) 
   if(!exists(target_folder)){
@@ -61,11 +61,11 @@ for(pid in pids) {
       filter(id==stimulus & question %in% questions.test) %>%
       rename(means=human_exp1)
     if(df.stim.orig %>% nrow() != 0){
-      df.stim.norm = df.pid.norm %>% filter(id==stimulus) %>% rename(normalized=human_exp1)
-      uttered = df.stim.norm %>% filter(!is.na(human_exp2)) %>% pull(utterance)
+      df.stim.smooth = df.pid.smooth %>% filter(id==stimulus) %>% rename(normalized=human_exp1)
+      uttered = df.stim.smooth %>% filter(!is.na(human_exp2)) %>% pull(utterance)
       
       stim_utt = paste(stimulus, uttered, sep=": ") 
-      df.stim = left_join(df.stim.orig %>% select(-human_exp2),
+      df.stim = left_join(df.stim.orig %>% dplyr::select(-human_exp2),
                           df.stim.norm %>% filter(question %in% questions.test),
                           by=c("prolific_id", "id", "question"))
       p = df.stim %>% PlotMeans(stimulus, sd_error_bars = FALSE) + 
@@ -77,8 +77,9 @@ for(pid in pids) {
   }
 }
 # Literal meaning probabilities -------------------------------------------
-df = left_join(data.prior.norm %>% select(-question, -RT) %>% rename(human_exp1=response),
-               data.production %>% select(-RT) %>% rename(utterance=response),
+df = left_join(data.prior.smooth %>% dplyr::select(-question, -RT) %>%
+                 rename(human_exp1=response),
+               data.production %>% dplyr::select(-RT) %>% rename(utterance=response),
                by=c("id", "prolific_id", "utterance")) %>%
   filter(!is.na(human_exp2)) %>% group_by(id) %>% 
   mutate(human_exp1=case_when(str_detect(utterance, "might") & human_exp1>0.1 ~ 1,
@@ -122,12 +123,6 @@ fn = paste(PLOT.dir, "by-participants-normalized-ratings-with-production",
            "small_beliefs", sep=fs)
 if(!dir.exists(fn)){dir.create(fn, recursive = TRUE)}
 plotSliderRatingsAndUtts(data.joint %>% filter(prolific_id %in% ids.small), fn)
-
-# 3.unnormalized ratings with produced utterance
-# fn = paste(PLOT.dir, "by-participants-transformed-ratings-with-production", sep=fs)
-# if(!dir.exists(fn)){dir.create(fn)}
-# plotSliderRatingsAndUtts(data.joint.transformed, fn)
-
 
 
 # Data Quality ------------------------------------------------------------
@@ -302,7 +297,7 @@ plotModelAndBehavioral(use_fitted_tables = FALSE)
 plotModelAndBehavioral(use_fitted_tables = TRUE)
 
 # Plot means per table_id and stimulus 
-plotAveragePredictions = function(use_fitted_tables, best){
+averageData = function(use_fitted_tables){
   if(use_fitted_tables){
     data = data.behav_model.fitted.each
     tbls = tbls.fitted
@@ -334,9 +329,13 @@ plotAveragePredictions = function(use_fitted_tables, best){
     group_by(id, predictor, utterance) %>%
     summarize(mean=mean(prediction), .groups="drop_last") %>%
     mutate(utterance=factor(utterance, levels=levels.responses))
-  
+  return(list(tables=tables, data=dat.long))
+}
+
+plotAveragePredictions = function(use_fitted_tables, best){
+  data = averageData(use_fitted_tables)
   for(stimulus in stimuli){
-    df = dat.long %>% filter(id == stimulus & mean > 0) %>%
+    df = data$data %>% filter(id == stimulus & mean > 0) %>%
       arrange(desc(mean))
     if(best){
       df.behav = df %>% filter(predictor == "human_exp2")
@@ -344,7 +343,7 @@ plotAveragePredictions = function(use_fitted_tables, best){
       df = bind_rows(df.behav[1:2, ], df.model[1:2, ])
     }
     
-    tbls.stim = tables %>% filter(stimulus == (!! stimulus))
+    tbls.stim = data$tables %>% filter(stimulus == (!! stimulus))
     tbls.stim.mean = tbls.stim %>% group_by(utterance) %>%
       summarize(response=mean(response), .groups="drop_last")
     
@@ -381,7 +380,20 @@ plotAveragePredictions(use_fitted_tables = TRUE, best=FALSE)
 plotAveragePredictions(use_fitted_tables = FALSE, best=TRUE)
 plotAveragePredictions(use_fitted_tables = TRUE, best=TRUE)
 
-
+plotScatterAverage = function(use_fitted_tables){
+  data = averageData(use_fitted_tables)
+  dat = data$data %>% pivot_wider(names_from="predictor", values_from="mean")
+  p = ggscatter(dat, x = "human_exp2", y = "model.p",
+            add = "reg.line", conf.int = TRUE, 
+            cor.coef = TRUE, cor.method = "pearson",
+            xlab = "Empirical predictions", ylab = "Model predictions") +
+    geom_point(data=dat, aes(x=human_exp2, y=model.p, color=utterance)) +
+    theme_bw(base_size=20) + theme(legend.position = "top")
+  target_dir = paste(PLOT.dir, "comparison-exp1-exp2-model", sep=fs)
+  ggsave(paste(target_dir, "scatter-mean-predictions.png", sep=fs), p,
+         height=12, width=20)
+  
+}
 
 
 

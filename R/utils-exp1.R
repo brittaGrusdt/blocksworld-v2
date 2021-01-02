@@ -50,7 +50,7 @@ plotSliderRatings <- function(data, questions, labels, cluster_by="g", relation=
   
     if(!is.na(target_dir)){
       ggsave(filename=paste(target_dir,  paste("slider-ratings-", id, ".png", sep=""), 
-                            sep=.Platform$file.sep), p)
+                            sep=.Platform$file.sep), p, width=12, height = 12)
     }
     
   }
@@ -84,7 +84,7 @@ plotSliderDensities <- function(data, questions, labels, target_dir=NA, jitter=T
     
     if(!is.na(target_dir)){
       ggsave(filename=paste(target_dir,  paste("slider-ratings-", id, ".png", sep=""), 
-                            sep=.Platform$file.sep), p)
+                            sep=.Platform$file.sep), p, width=12, height = 12)
     }
   }
 }

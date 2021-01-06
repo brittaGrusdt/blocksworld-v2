@@ -53,7 +53,6 @@ run_webppl <- function(path_wppl_file, params){
 
 structure_listener_data <- function(posterior, params){
   df_long <- posterior %>% webppl_distrs_to_tibbles() %>%
-    mutate(val=case_when(val<0.000001 ~ 0.000001, TRUE ~ val)) %>% 
     add_column(bias=params$bias) %>%
     rename(table_id=bn.id)
   
@@ -73,9 +72,12 @@ structure_listener_data <- function(posterior, params){
       pivot_longer(cols=c(AC, `A-C`, `-AC`, `-A-C`),
                    names_to="cell", values_to="val")
   }
-  
   if(params$save){
-    df_long %>% save_data(params$target)
+    x = group_map(df_long %>% group_by(level), function(dat.group, lev){
+      dat.group %>% save_data(paste(params$target_dir, .Platform$file.sep,
+                                    "results-", lev, ".rds", sep=""))
+      return()
+    });
     params %>% save_data(params$target_params)
   }
   return(df_long)
@@ -155,25 +157,8 @@ structure_speaker_data <- function(posterior, params, save=NA){
         add_column(bias=params$bias)
   
   if(save){
-    df %>% save_data(params$target)
+    df %>% save_data(paste(params$target_dir, params$target_fn, sep=.Platform$file.sep))
     params %>% save_data(params$target_params)
-  }
-  return(df)
-}
-
-average_speaker <- function(distrs, params){
-  # @distrs: long format with columns: utterance
-  data <- distrs %>% group_by(utterance, stimulus)
-  data.cns <- distrs %>% group_by(utterance, cn, stimulus)
-
-  df <- data %>% summarise(avg=mean(probs)) %>% add_column(bias=params$bias)
-  df_cns <- data.cns %>% summarise(avg=mean(probs), .groups="keep") %>%
-    add_column(bias=params$bias)
-
-  if(params$save){
-    fn <- str_split(params$target, ".rds")
-    df %>% save_data(paste(fn[[1]][1], "-avg.rds", sep=""))
-    df_cns %>% save_data(paste(fn[[1]][1], "-avg-cns.rds", sep=""))
   }
   return(df)
 }

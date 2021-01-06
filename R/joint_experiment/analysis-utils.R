@@ -118,12 +118,6 @@ data.quality = readRDS(paste(RESULT.dir, fs, "filtered_data", fs,
                              "test-data-prior-quality.rds", sep=""))
 data.distances = readRDS(paste(RESULT.dir, "distances-quality.rds", sep=fs))
 
-# empirical tables (test-trials)
-# TABLES.ind = readRDS(paste(RESULT.dir,"empiric-ind-tables-smooth.rds", sep=fs)) %>%
-#   filter(id != "ind2")
-# TABLES.dep = readRDS(paste(RESULT.dir, "empiric-dep-tables-smooth.rds", sep=fs))
-# TABLES.all = bind_rows(TABLES.ind, TABLES.dep)
-
 data.train.smooth = data$train.smooth
 data.train.orig = data$train.orig
 # for each participant only the last 50% of all train trials
@@ -135,28 +129,6 @@ data.train.smooth.half = data.train.smooth %>%
   pivot_wider(names_from=question, values_from=response) %>%
   ungroup() %>% 
   dplyr::select(-trial.relation, -trial.idx)
-
-
-# Model Prediction Data ---------------------------------------------------
-# (speaker predictions joint with behavioral data)
-data.behav_model.fitted.across = readRDS(
-  here("model", "results", "fitted-tables", "model-behavioral-across-table-ids.rds")
-)
-data.behav_model.fitted.each = readRDS(
-  here("model", "results", "fitted-tables", "model-behavioral-each-table-id.rds")
-)
-
-data.behav_model.theoretic.across = readRDS(
-  here("model", "results", "theoretic-tables","model-behavioral-across-table-ids.rds")
-)
-data.behav_model.theoretic.each = readRDS(
-  here("model", "results", "theoretic-tables", "model-behavioral-each-table-id.rds")
-)
-
-tbls.theoretic = readRDS(here("model", "data", "mapping-tables-model-ids.rds"))
-tbls.fitted = readRDS(
-  paste(RESULT.dir, "mapping-tables-fitted-dirichlet-ids.rds", sep=fs)
-)
 
 # Other -------------------------------------------------------------------
 # ordered by informativity

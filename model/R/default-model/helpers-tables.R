@@ -97,8 +97,6 @@ sampleModelTables = function(){
   params$target <- file.path(params$target_dir, params$target_fn, fsep=fs)
   params$target_params <- file.path(params$target_dir, params$target_params, fsep=fs)
   tables.model <- create_tables(params)
-  save_data(tables.model, params$tables_path)
-  save_data(params, params$target_params)
   return(list(tables=tables.model, params=params))
 }
 

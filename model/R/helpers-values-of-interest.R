@@ -171,8 +171,9 @@ voi_default <- function(posterior, params){
   }
   results = results %>% filter(level %in% levels)
   
-  if(params$save){results %>%
-      save_data(paste(str_sub(params$target, 1, -5), "-voi.rds", sep=""))
+  if(params$save){
+    save_data(results, paste(params$target_dir, "prior-LL-PL-vois.rds",
+                             sep=.Platform$file.sep))
   }
   return(results)
 }

@@ -116,6 +116,7 @@ standardize_sentences = function(df.test){
 }
 
 # translate A/C-responses to real colors
+# @arg speaker.model: long format
 translate_utterances = function(speaker.model, group="bg"){
   mapping = tribble(~group, ~A, ~`-A`, ~C, ~`-C`, 
                     "gb", "green falls", "green does not fall",
@@ -345,8 +346,7 @@ join_model_behavioral_data = function(dat.speaker, params){
   
   # iterate through all empirical ids, and note all table_ids that are associated 
   # with that empirical id (as there are several since empirical tables were augmented)
-  ids = mapping.ids %>% ungroup() %>%
-    dplyr::select(table_id, empirical_id) %>% unique()
+  ids = mapping.ids %>% ungroup() %>% dplyr::select(table_id, empirical_id)
   empirical_ids = ids %>% pull(empirical_id) %>% unique()
   table_map = mapping.ids %>% group_by(empirical_id) %>%
     summarize(table_ids=list(table_id), .groups="drop_last")
@@ -428,3 +428,30 @@ join_model_behavioral_data = function(dat.speaker, params){
                   sep=.Platform$file.sep))
   return(data.human_model_each)
 }
+
+join_model_behavioral_avg_stimulus = function(speaker, params, fn_suffix) {
+  sp = speaker %>% group_by(stimulus, utterance) %>%
+    summarize(p=mean(probs), .groups="drop_last") %>%
+    rename(response=utterance) %>% translate_utterances() %>%
+    rename(utterance=response) %>%
+    add_column(predictor="model") %>%
+    mutate(stimulus = as.factor(stimulus))
+  
+  behav.joint = readRDS(paste(params$dir_empiric,"human-exp1-smoothed-exp2.rds",
+                              sep=.Platform$file.sep)) %>%
+    group_by(id, utterance) %>%
+    mutate(human_exp2 = case_when(is.na(human_exp2) ~ 0,
+                                  TRUE ~ 1)) %>%
+    summarize(p = mean(human_exp2), .groups="drop_last") %>%
+    rename(stimulus=id) %>% add_column(predictor="behavioral")
+  
+  joint.avg = bind_rows(behav.joint, sp) %>% group_by(stimulus, predictor)
+  fn =  paste("model-behavioral-avg-stimuli", fn_suffix, ".rds", sep="")
+  save_data(joint.avg, paste(params$target_dir, fn, sep=.Platform$file.sep))
+  return(joint.avg)
+}
+
+
+
+
+

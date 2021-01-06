@@ -6,19 +6,15 @@ source(here("model", "R", "helper-functions.R"))
 source(here("model", "R", "helpers-values-of-interest.R"))
 source(here("R", "utils-exp2.R"))
 
-# params <- configure(c("prior", "tables_theoretic"))
-# params <- configure(c("speaker", "tables_theoretic"))
-# params <- configure(c("pl", "tables_theoretic"))
+used_tables = "tables_model"
+# used_tables = "tables-dirichlet"
 
-
-# params <- configure(c("prior", "tables_fitted_dirichlet"))
-# params <- configure(c("speaker", "tables_fitted_dirichlet"))
-params <- configure(c("pl", "tables_fitted_dirichlet"))
-
+# params <- configure(c("speaker_empirical_tables", used_tables))
+params <- configure(c("speaker_prior_samples", used_tables))
+# params <- configure(c("pl", used_tables))
 
 # Setup -------------------------------------------------------------------
 dir.create(params$target_dir, recursive = TRUE)
-params$target <- file.path(params$target_dir, params$target_fn, fsep=.Platform$file.sep)
 params$target_params <- file.path(params$target_dir, params$target_params, fsep=.Platform$file.sep)
 
 ## Generate/Retrieve tables
@@ -28,8 +24,19 @@ params$tables = tables %>% ungroup %>%
   dplyr::select(table_id, ps, vs, stimulus, starts_with("logL_"))
 
 params$params_ll = read_csv(paste(params$dir_empiric, params$params_ll, sep=.Platform$file.sep))
-if(!("bn_ids" %in% names(params))){
-  params$bn_ids = tables %>% filter(empirical) %>% pull(table_id)
+if("predictions_for" %in% names(params)) {
+  if(params$predictions_for == "empirical-tables") {
+    params$bn_ids = tables %>% filter(!is.na(empirical_id)) %>% pull(table_id)
+  } else if(params$predictions_for == "prior-samples-stimuli"){
+    # for each stimulus sample tables from fitted distributions, i.e. from 
+    # set of input tables
+    set.seed(params$seed_tables)
+    bn_ids = group_map(tables %>% group_by(stimulus), function(t, stim){
+      return(tibble(table_id = sample(x=t$table_id, size=100, replace=TRUE),
+             stimulus = stim))
+    })
+    params$bn_ids = bind_rows(bn_ids) %>% pull(table_id)
+  }
 }
 
 ## Generate/Retrieve utterances
@@ -54,9 +61,20 @@ posterior <- run_webppl(params$model_path, params)
 if(params$level_max == "speaker") {
   speaker <- posterior %>% structure_speaker_data(params) %>%
     group_by(stimulus)
-  speaker_avg <- speaker %>% average_speaker(params) %>% arrange(avg)
-  speaker_avg
-  res.behav_model = join_model_behavioral_data(speaker, params);
+  
+  if(params$predictions_for == "empirical-tables") {
+    res.behav_model = join_model_behavioral_data(speaker, params);
+    sp = res.behav_model %>%
+      dplyr::select(prolific_id, id, utterance, model.p) %>%
+      rename(stimulus = id, probs=model.p)
+    res.behav_model.avg = join_model_behavioral_avg_stimulus(
+      sp, params, "_predictions-empirical-based")                                                       
+  } 
+  if(params$predictions_for == "prior-samples-stimuli" & 
+     used_tables == "tables-dirichlet") {
+    res.behav_model.avg = join_model_behavioral_avg_stimulus(
+      speaker, params, "_predictions-stimulus-prior-based")
+  }
 
 } else if(params$level_max %in% c("priorN")){
     data <- structure_bns(posterior, params)
@@ -65,6 +83,5 @@ if(params$level_max == "speaker") {
                  logL=posterior$logL$value)
 } else {
   data <- posterior %>% structure_listener_data(params)
-  # trust <- data %>% listener_beliefs("PL", params)
   data_voi <- voi_default(data, params)
 }

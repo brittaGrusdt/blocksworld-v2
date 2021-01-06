@@ -21,32 +21,40 @@ default:
 # only add new variables, since if more than two config-ids are loaded
 # default value is taken again if it does not appear in a later loaded config-id, 
 # although it had been overwritten in a previously loaded config-id
-tables_theoretic:
-  tables_empiric: "./model/data/tables-model-empirical.rds" # tables-model with empirical_ids added
+tables_model:
+  tables_empiric: "./model/data/tables-model-empirical.rds" 
   tables_mapping: "./model/data/mapping-tables-model-ids.rds"
-  target_dir: "./model/results/theoretic-tables"
-  utts_path: "./model/data/utterances-theoretic-tables.rds"
+  target_dir: "./model/results/tables-model"
+  utts_path: "./model/data/utterances-model-tables.rds"
 
-tables_fitted_dirichlet:
-  # tables-fitted with empirical_ids added
-  tables_empiric: "./data/prolific/results/toy-blocks-pilot-2/tables-fitted-dirichlet-empirical.rds"
-  tables_mapping: "./data/prolific/results/toy-blocks-pilot-2/mapping-tables-fitted-dirichlet-ids.rds"
-  target_dir: "./model/results/fitted-tables"
-  utts_path: "./model/data/utterances-fitted-tables.rds"
-
-
+tables_dirichlet:
+  tables_empiric: "./model/data/tables-dirichlet-empirical.rds"
+  tables_mapping: "./model/data/mapping-tables-dirichlet-ids.rds"
+  target_dir: "./model/results/tables-dirichlet"
+  utts_path: "./model/data/utterances-dirichlet-tables.rds"
+  
 ## 2. Level configurations ##
 # @arg utt: - if set to "p_delta" or "p_rooij", respective value must be
 #           large (see in webppl file) for all states given to the speaker,
 #           - if set to "" no condition, just sampled from prior as usual
-speaker:
+speaker_empirical_tables:
   level_max: "speaker"
   utt: ""
-  target_fn: "results-speaker.rds"
-  target_params: "params-speaker.rds"
+  target_fn: "results-speaker-empirical-tables.rds"
+  target_params: "params-speaker-empirical-tables.rds"
   n_samples: 0 # bns sampled from prior
   #bn_ids: !expr c(5)
+  predictions_for: "empirical-tables"  
   
+speaker_prior_samples:
+  level_max: "speaker"
+  utt: ""
+  target_fn: "results-speaker-prior-samples-stimuli.rds"
+  target_params: "params-speaker-prior-samples-stimuli.rds"
+  n_samples: 0 # bns sampled from prior
+  #bn_ids: !expr c(5)
+  predictions_for: "prior-samples-stimuli"  
+
 prior:
   level_max: "prior"
   utt: ""
@@ -65,13 +73,13 @@ ll:
   level_max: "LL"
   utt: "A > C"
   target_fn: "results-LL.rds"
-  target_params: "params-LL.rds"
+  target_params: "params-LL-prior.rds"
 
 pl:
   level_max: "PL"
   utt: "A > C"
   target_fn: "results-PL.rds"
-  target_params: "params-PL.rds"
+  target_params: "params-prior-LL-PL.rds"
 
 
 # to generate tables based on theoretic beta distributions

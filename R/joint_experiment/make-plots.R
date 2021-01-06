@@ -40,8 +40,9 @@ tables.long %>%
 
 save_to = paste(PLOT.dir, "slider-ratings-boxplots", sep=fs)
 if(!dir.exists(save_to)) {dir.create(save_to)}
-tables.long %>% plotSliderRatings(questions.test, labels.test, cluster_by="bg",
-                              relation=FALSE, target_dir=save_to)
+tables.long %>%
+  plotSliderRatings(questions.test, labels.test, cluster_by="bg",
+                    relation=FALSE, target_dir=save_to)
 
 # Slider Ratings ----------------------------------------------------------
 # 1.slider ratings with utterance and normalized ratings
@@ -53,8 +54,7 @@ for(pid in pids) {
   df.pid.smooth = df.smooth %>% filter(prolific_id == (!! pid))
   
   target_folder = paste(save_to, pid, sep=fs) 
-  if(!exists(target_folder)){
-    dir.create(target_folder)
+  if(!dir.exists(target_folder)){ dir.create(target_folder)
   }
   for(stimulus in stimuli) {
     df.stim.orig = df.pid.orig %>%
@@ -66,7 +66,7 @@ for(pid in pids) {
       
       stim_utt = paste(stimulus, uttered, sep=": ") 
       df.stim = left_join(df.stim.orig %>% dplyr::select(-human_exp2),
-                          df.stim.norm %>% filter(question %in% questions.test),
+                          df.stim.smooth %>% filter(question %in% questions.test),
                           by=c("prolific_id", "id", "question"))
       p = df.stim %>% PlotMeans(stimulus, sd_error_bars = FALSE) + 
         labs(y="unnormalized slider rating", x="",title=stim_utt) +
@@ -92,7 +92,7 @@ p <- df %>%
   theme(text = element_text(size=20), legend.position="bottom") +
   labs(x="rated probability (prior elicitation)", y="response")
 
-ggsave(paste(PLOT.dir, "prior-vs-utt.png", sep=fs), p, width=15)
+ggsave(paste(PLOT.dir, "prior-vs-utt.png", sep=fs), p, width=14, height=7)
 
 #Same plot, here results plotted separately for each participant. Stimuli are color coded.
 p <- df %>%
@@ -103,27 +103,14 @@ p <- df %>%
   theme_bw(base_size = 14) +
   theme(legend.position="none") +
   labs(x="rated probability (prior elicitation)", y="response")
-ggsave(paste(PLOT.dir, "prior-vs-utt-per-proband.png", sep=fs), p, width=15, height=18)
-
-
-ratios_large = df %>% group_by(prolific_id) %>%
-  summarize(n=n(), ratio_large=sum(human_exp1 >= 0.7)/n) %>%
-  arrange(desc(ratio_large))
-ids.large = ratios_large %>% filter(ratio_large>=0.7) %>% pull(prolific_id)
-ids.small = ratios_large %>% filter(ratio_large<0.7) %>% pull(prolific_id)
+ggsave(paste(PLOT.dir, "prior-vs-utt-per-proband.png", sep=fs), p, width=18, height=18)
 
 # Slider Ratings
-# 2.normalized ratings with produced utterance
-fn = paste(PLOT.dir, "by-participants-normalized-ratings-with-production",
-           "large_beliefs", sep=fs)
+# normalized ratings with produced utterance
+fn = paste(PLOT.dir, "by-participants-normalized-ratings-with-production", sep=fs)
 if(!dir.exists(fn)){dir.create(fn, recursive = TRUE)}
-plotSliderRatingsAndUtts(data.joint %>% filter(prolific_id %in% ids.large), fn)
-
-fn = paste(PLOT.dir, "by-participants-normalized-ratings-with-production",
-           "small_beliefs", sep=fs)
-if(!dir.exists(fn)){dir.create(fn, recursive = TRUE)}
-plotSliderRatingsAndUtts(data.joint %>% filter(prolific_id %in% ids.small), fn)
-
+plotSliderRatingsAndUtts(data.joint.smooth, fn)
+# todo here
 
 # Data Quality ------------------------------------------------------------
 p = data.quality  %>%
@@ -135,78 +122,20 @@ p = data.quality  %>%
 ggsave(paste(PLOT.dir, "quality-sum-sq-diff-to-mean.png", sep=fs), p, width=15, height=10)
 
 
-# Train data --------------------------------------------------------------
-plotTrainUncertain = function(fn) {
-  df=data.train.norm %>% 
-    mutate(question=case_when(question=="bg" ~ "ry",
-                              question=="b" ~ "r",
-                              question=="g" ~ "y",
-                              TRUE ~ question)) %>%
-    pivot_wider(names_from="question", values_from="response") %>%
-    mutate(red=ry+r, yellow=ry+y, not_red=y+none, not_yellow=r+none,
-           ratio_red=case_when(yellow>=not_yellow ~ ry/y,
-                               TRUE ~ r/none),
-           ratio_yellow=case_when(red>=not_red ~ ry/r,
-                                  TRUE ~ y/none)) %>%
-    select(prolific_id, id, trial_number, expected, ratio_red, ratio_yellow, red, yellow)
-
-  if(str_detect(fn, "edge")){
-    df = left_join(df, train.edges, by="id") %>% filter(!is.na(condition))
-  } else {
-    df =left_join(df, train.ramp, by="id") %>% filter(!is.na(condition))
-  }
-  
-  df = df %>%
-    mutate(block=case_when(block=="blue" ~ "red",
-                           block=="green" ~ "yellow",
-                           TRUE ~ block)) %>% 
-    mutate(falls = case_when(block=="yellow" & expected %in% c("ry", "y") ~ TRUE,
-                                       block=="red" & expected %in% c("ry", "r") ~ TRUE,
-                                       TRUE ~ FALSE))  
-  max_y = df %>% filter(!is.infinite(ratio_yellow)) %>% pull(ratio_yellow) %>% max()
-  max_r = df %>% filter(!is.infinite(ratio_red)) %>% pull(ratio_red) %>% max()
-  
-  df.long = df %>% pivot_longer(cols=c("red", "yellow", "ratio_red", "ratio_yellow"),
-                                names_to="key", values_to="p") %>%
-    filter(((str_detect(key, "ratio") & str_detect(key, block)) | key==block) &
-             startsWith(condition, "uncertain")) %>%
-    mutate(value=case_when(str_detect(key, "ratio") ~  "ratio",
-                           TRUE ~ "normalized rating"),
-           p=case_when(is.infinite(p) ~ max(max_y, max_r),
-                       TRUE ~ p))
-
-  for(pid in df.long$prolific_id %>% unique()) {
-    p = df.long %>% filter(prolific_id == pid) %>%
-      ggplot(aes(x=trial_number, y=p, colour=dir)) +
-      geom_point(aes(shape=falls), size=2) +
-      geom_line() +
-      geom_hline(aes(yintercept=0.5)) +
-      geom_hline(aes(yintercept=1)) +
-      labs(title=paste("trials uncertain block", fn)) +
-      facet_wrap(~value, scales="free_y")
-    target = paste(PLOT.dir, "by-participants-train", fn, sep=fs)
-    if(!dir.exists(target)) {dir.create(target, recursive = TRUE)}
-    ggsave(paste(target, paste(pid, "-", fn, ".png", sep=""), sep=fs), height=8, width=10)
-  }
-}
-
-plotTrainUncertain("edge")
-plotTrainUncertain("ramp")
-
-
 # Model-vs-human ----------------------------------------------------------
+# todo: go through this again!
 plotModelAndBehavioral = function(use_fitted_tables){
   if(use_fitted_tables){
     save_to = paste(PLOT.dir, "comparison-exp1-exp2-model", "fitted-tables", sep=fs)
     joint_data = data.behav_model.fitted.each
-    mapping = readRDS(paste(RESULT.dir, "mapping-tables-fitted-dirichlet-ids.rds", sep=fs))
+    mapping = readRDS(paste(RESULT.dir, "mapping-tables-dirichlet-empirical-ids.rds", sep=fs))
     prior = readRDS(here("model", "results", "fitted-tables", "results-prior.rds")) %>%
       ungroup() %>% dplyr::select(cn, table_id, prob) %>% distinct()
   } else{
-    save_to = paste(PLOT.dir, "comparison-exp1-exp2-model", "theoretic-tables", sep=fs)
+    save_to = paste(PLOT.dir, "comparison-exp1-exp2-model", "tables-model", sep=fs)
     joint_data = data.behav_model.theoretic.each
     mapping = readRDS(here("model", "data", "mapping-tables-model-ids.rds"))
-    prior = readRDS(here("model", "results", "theoretic-tables", "results-prior.rds")) %>%
+    prior = readRDS(here("model", "results", "tables-model", "results-prior.rds")) %>%
       ungroup() %>% dplyr::select(cn, table_id, prob) %>% distinct()
   }
   if(!dir.exists(save_to)) {dir.create(save_to)}
@@ -296,105 +225,51 @@ plotModelAndBehavioral = function(use_fitted_tables){
 plotModelAndBehavioral(use_fitted_tables = FALSE)
 plotModelAndBehavioral(use_fitted_tables = TRUE)
 
-# Plot means per table_id and stimulus 
-averageData = function(use_fitted_tables){
-  if(use_fitted_tables){
-    data = data.behav_model.fitted.each
-    tbls = tbls.fitted
+
+plotAveragePredictions = function(tables_fn, across_empirical){
+  if(across_empirical){
+    fn = "predictions-empirical-based"
+    data = readRDS(here("model", "results", tables_fn,
+                        paste("model-behavioral-avg-stimuli_", fn, ".rds", sep="")))
   } else {
-    data = data.behav_model.theoretic.each
-    tbls = tbls.theoretic 
+    fn = "predictions-stimulus-prior-based"
+    data = readRDS(here("model", "results", tables_fn,
+                        paste("model-behavioral-avg-stimuli_", fn, ".rds", sep="")))
   }
-  tables = tbls %>% filter(orig_table) %>%
-    dplyr::select(AC, `A-C`, `-AC`, `-A-C`, table_id, empirical_id, p_id) %>%
-    unnest(c(p_id)) %>%
-    separate("p_id", into=c("prolific_id", "id", "prior"), sep="_") %>%
-    dplyr::select(-prolific_id) %>%
-    distinct_at(vars(c(table_id)), .keep_all = TRUE) %>% 
-    unite("stimulus", c("id", "prior")) %>% group_by(stimulus) %>%
-    rename(bg=AC, b=`A-C`, g=`-AC`, none=`-A-C`) %>%
-    add_probs() %>%
-    pivot_longer(cols=c(starts_with("p_"), "bg", "b", "g", "none"), 
-                 names_to="prob", values_to="response") %>%
-    translate_probs_to_utts() %>%
-    mutate(utterance=factor(utterance, levels=levels.responses),
-           table_id=as.factor(table_id), empirical_id=as.factor(empirical_id))
+  data = data %>% mutate(utterance=factor(utterance, levels = levels.responses),
+                         predictor=as.factor(predictor))
+
+  p.bars = data %>% filter(p > 0) %>% arrange(desc(p)) %>% 
+    ggplot(aes(x=p, y=utterance, fill=predictor)) +
+    geom_bar(stat="identity", position=position_dodge()) +
+    theme_bw(base_size=20) +
+    theme(legend.position="bottom") +
+    labs(x="ratio participants/average model prediction") +
+    facet_wrap(~stimulus)
+  target_dir = paste(PLOT.dir, "comparison-exp1-exp2-model", tables_fn, sep=fs)
+  if(!dir.exists(target_dir)){dir.create(target_dir)}
   
-  dat = data %>%
-    group_by(id, empirical_id, utterance) %>% 
-    mutate(human_exp2 = case_when(is.na(human_exp2) ~ 0, 
-                                  TRUE ~ 1))
-  dat.long = dat %>%
-    pivot_longer(cols=c(model.p, human_exp2), names_to="predictor", values_to="prediction") %>% 
-    group_by(id, predictor, utterance) %>%
-    summarize(mean=mean(prediction), .groups="drop_last") %>%
-    mutate(utterance=factor(utterance, levels=levels.responses))
-  return(list(tables=tables, data=dat.long))
-}
+  ggsave(paste(target_dir, paste(fn, "bars.png", sep="_"), sep=fs), p.bars,
+         height=20, width=16)
 
-plotAveragePredictions = function(use_fitted_tables, best){
-  data = averageData(use_fitted_tables)
-  for(stimulus in stimuli){
-    df = data$data %>% filter(id == stimulus & mean > 0) %>%
-      arrange(desc(mean))
-    if(best){
-      df.behav = df %>% filter(predictor == "human_exp2")
-      df.model = df %>% filter(predictor == "model.p")
-      df = bind_rows(df.behav[1:2, ], df.model[1:2, ])
-    }
-    
-    tbls.stim = data$tables %>% filter(stimulus == (!! stimulus))
-    tbls.stim.mean = tbls.stim %>% group_by(utterance) %>%
-      summarize(response=mean(response), .groups="drop_last")
-    
-    # p.prior = tbls.stim %>% 
-    #   ggplot(aes(y=utterance, x=response, fill=empirical_id)) +
-    #   geom_bar(stat="identity", position=position_dodge()) +
-    #   # scale_fill_grey() +
-    #   geom_vline(aes(xintercept=0.8)) +
-    #   geom_bar(dat=tbls.stim.mean, fill='red', stat="identity", alpha=0.4) +
-    #   theme_bw(base_size = 20) +
-    #   labs(x="prior response") 
-    # 
-    # ggsave(paste(target_dir, fs, paste(stimulus, "-prior-entries.png", sep="")
-    #              , sep=""), p.prior, height=12, width=20)
-    # 
-    p = df %>%   
-      ggplot(aes(x=mean, y=utterance, fill=predictor)) +
-      geom_bar(stat="identity", position=position_dodge()) +
-      theme_bw(base_size=20) +
-      theme(legend.position="bottom") +
-      labs(x="ratio participants/average model prediction", 
-           title=stimulus)
-    fn = ifelse(use_fitted_tables, "fitted-tables", "theoretic-tables")
-    fn = ifelse(best, paste(fn, "best", sep="-"), fn)
-    target_dir = paste(PLOT.dir, fs, "comparison-exp1-exp2-model", fs, fn, sep="")
-    target_fn = paste(stimulus, ".png", sep="")
-    if(!dir.exists(target_dir)){dir.create(target_dir)}
-    ggsave(paste(target_dir, fs, target_fn, sep=""), p, height=12, width=20)
-  }
-}
-plotAveragePredictions(use_fitted_tables = FALSE, best=FALSE)
-plotAveragePredictions(use_fitted_tables = TRUE, best=FALSE)
-
-plotAveragePredictions(use_fitted_tables = FALSE, best=TRUE)
-plotAveragePredictions(use_fitted_tables = TRUE, best=TRUE)
-
-plotScatterAverage = function(use_fitted_tables){
-  data = averageData(use_fitted_tables)
-  dat = data$data %>% pivot_wider(names_from="predictor", values_from="mean")
-  p = ggscatter(dat, x = "human_exp2", y = "model.p",
-            add = "reg.line", conf.int = TRUE, 
-            cor.coef = TRUE, cor.method = "pearson",
-            xlab = "Empirical predictions", ylab = "Model predictions") +
-    geom_point(data=dat, aes(x=human_exp2, y=model.p, color=utterance)) +
-    theme_bw(base_size=20) + theme(legend.position = "top")
-  target_dir = paste(PLOT.dir, "comparison-exp1-exp2-model", sep=fs)
-  ggsave(paste(target_dir, "scatter-mean-predictions.png", sep=fs), p,
-         height=12, width=20)
+  data.wide = data %>% pivot_wider(names_from="predictor", values_from="p")
+  p.scatter = 
+    ggscatter(data.wide, y = "behavioral", x = "model", add = "reg.line",
+              conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+              ylab = "Empirical observations", xlab = "Model predictions") +
+    geom_point(data=data.wide, aes(y=behavioral, x=model, color=utterance)) +
+    theme_bw(base_size=20) + theme(legend.position = "top") 
+  ggsave(paste(target_dir, paste(fn, "scattered.png", sep="_"), sep=fs),
+         p.scatter, height=12, width=20)
   
-}
+  p.scatter.stim = p.scatter + facet_wrap(~stimulus)
+  ggsave(paste(target_dir, paste(fn, "scattered-stim.png", sep="_"), sep=fs),
+         p.scatter.stim, height=14, width=20)
 
+}
+plotAveragePredictions("tables-dirichlet", TRUE)
+plotAveragePredictions("tables-dirichlet", FALSE)
+plotAveragePredictions("tables-model", TRUE)
 
 
 
@@ -436,7 +311,7 @@ tbls.empiric %>% filter(empirical_id == x$empirical_id)
 
 joint_data = data.behav_model.fitted.each
 p = here("data", "prolific","results", "toy-blocks-pilot-2",
-         "tables-fitted-dirichlet-empirical.rds")
+         "tables-dirichlet-empirical.rds")
 tbls.fiited = readRDS(p) %>% dplyr::select(-starts_with("logL")) %>%
   dplyr::select(-empirical, -orig_table, -vs, -ps, -p_id, -stimulus)
 df.best = joint_data %>% group_by(table_id, prolific_id, id) %>% 
@@ -456,6 +331,7 @@ df = joint_data %>%
 
 x=df[3,]
 
+tbls.fitted = readRDS(here("model", "data", "mapping-tables-dirichlet-ids.rds"))
 tbls.fitted %>% filter(table_id==x$table_id)
 tbls.empiric %>% filter(empirical_id == x$empirical_id)
 
